@@ -186,7 +186,7 @@ const Shop = () => {
       return (
         <Pressable
           onPress={() => router.push(`/product/${item.id}` as any)}
-          className="flex-1 bg-white rounded-xl overflow-hidden mb-3 border border-gray-200"
+          className="flex-1 overflow-hidden mb-3"
         >
           <Image
             source={{ uri: item.image }}
@@ -204,12 +204,6 @@ const Shop = () => {
               <Text className="font-futura-demi text-base text-slate-900">
                 {formatPrice(item.price)}
               </Text>
-              <View className="flex-row items-center">
-                <Ionicons name="star" size={12} color="#fbbf24" />
-                <Text className="font-futura text-xs text-gray-600 ml-1">
-                  {item.rating}
-                </Text>
-              </View>
             </View>
           </View>
         </Pressable>

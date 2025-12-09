@@ -38,7 +38,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
         >
           <Image
             source={{ uri: item.image }}
-            className="w-full h-60 "
+            className="w-full h-60"
             resizeMode="cover"
           />
           <View className="p-3">
