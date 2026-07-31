@@ -1,14 +1,19 @@
 import AddressFormModal from "@/components/AddressFormModal";
-import { useAddress } from "@/contexts/AddressContext";
+import { useAddressStore } from "@/stores/addressStore";
+import { useThemeStore } from "@/stores/themeStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, View } from "react-native";
+import { AppText as Text } from "@/components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ShippingAddresses = () => {
-  const { addresses, deleteAddress, setDefaultAddress } = useAddress();
+  const { addresses, deleteAddress, setDefaultAddress } = useAddressStore();
   const router = useRouter();
+  const theme = useThemeStore();
+  const isDark = theme?.isDark ?? false;
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -38,12 +43,12 @@ const ShippingAddresses = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="px-4 py-4 border-b border-gray-200 flex-row items-center">
+    <SafeAreaView className="flex-1 bg-white dark:bg-[#050505]">
+      <View className="px-4 py-4 border-b border-gray-200 flex-row items-center dark:border-white/10">
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#0f172a" />
+          <Ionicons name="arrow-back" size={24} color={isDark ? "#ffffff" : "#0f172a"} />
         </Pressable>
-        <Text className="font-futura-bold text-xl text-slate-900 ml-4">
+        <Text className="font-bold text-xl text-slate-900 ml-4 dark:text-white">
           Shipping Addresses
         </Text>
       </View>
@@ -52,10 +57,10 @@ const ShippingAddresses = () => {
         {/* Add New Address Button */}
         <Pressable
           onPress={() => setShowAddModal(true)}
-          className="flex-row items-center justify-center bg-slate-900 rounded-md py-4 mb-6"
+          className="flex-row items-center justify-center bg-slate-900 rounded-md py-4 mb-6 dark:bg-white"
         >
-          <Ionicons name="add" size={24} color="white" />
-          <Text className="font-futura-demi text-white ml-2">
+          <Ionicons name="add" size={24} color={isDark ? "#000000" : "white"} />
+          <Text className="font-semibold text-white ml-2 dark:text-black">
             Add New Address
           </Text>
         </Pressable>
@@ -64,28 +69,28 @@ const ShippingAddresses = () => {
         {addresses.map((address) => (
           <View
             key={address.id}
-            className="border border-gray-200 rounded-lg p-4 mb-4 bg-white"
+            className="border border-gray-200 rounded-lg p-4 mb-4 bg-white dark:border-white/10 dark:bg-[#101215]"
           >
             {/* Default Badge */}
             {address.isDefault && (
               <View className="bg-green-100 px-3 py-1 rounded-full self-start mb-3">
-                <Text className="font-futura-medium text-xs text-green-700">
+                <Text className="font-medium text-xs text-green-700">
                   ✓ Default Address
                 </Text>
               </View>
             )}
 
             {/* Address Info */}
-            <Text className="font-futura-demi text-base text-slate-900">
+              <Text className="font-semibold text-base text-slate-900 dark:text-white">
               {address.fullName}
             </Text>
-            <Text className="font-futura text-sm text-gray-600 mt-1">
+            <Text className="font-normal text-sm text-gray-600 mt-1 dark:text-white">
               {address.phoneNumber}
             </Text>
-            <Text className="font-futura text-sm text-gray-600 mt-2">
+            <Text className="font-normal text-sm text-gray-600 mt-2 dark:text-white">
               {address.address}
             </Text>
-            <Text className="font-futura text-sm text-gray-600">
+            <Text className="font-normal text-sm text-gray-600 dark:text-white">
               {address.city}, {address.state} - {address.zipCode}
             </Text>
 
@@ -120,10 +125,10 @@ const ShippingAddresses = () => {
         {addresses.length === 0 && (
           <View className="items-center py-20">
             <Ionicons name="location-outline" size={64} color="#cbd5e1" />
-            <Text className="font-futura-demi text-lg text-slate-900 mt-4">
+            <Text className="font-semibold text-lg text-slate-900 mt-4 dark:text-white">
               No addresses saved
             </Text>
-            <Text className="font-futura text-gray-500 text-center mt-2 px-8">
+            <Text className="font-normal text-gray-500 text-center mt-2 px-8">
               Add a shipping address for faster checkout
             </Text>
           </View>

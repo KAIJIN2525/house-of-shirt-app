@@ -9,7 +9,31 @@ export interface Product {
   rating: number;
   description: string;
   sizes?: string[];
+  sizeOptions?: ProductSizeOption[];
   colors?: string[];
+  salesCount?: number;
+  variantId?: string;
+  variants?: ProductVariant[];
+}
+
+export interface ProductSizeOption {
+  value: string;
+  available: boolean;
+  inventoryQuantity: number;
+  variantId?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  title: string;
+  price: number;
+  available: boolean;
+  inventoryQuantity: number;
+  selectedOptions: Array<{
+    name: string;
+    value: string;
+  }>;
+  image?: string;
 }
 
 export const products: Product[] = [

@@ -1,13 +1,15 @@
 import { formatPrice } from "@/constants";
-import { products } from "@/constants/products";
+import { useProductsStore } from "@/stores/productsStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
-import { FlatList, Image, Pressable, Text, View } from "react-native";
+import { FlatList, Image, Pressable, View } from "react-native";
+import { AppText as Text } from "@/components/AppText";
 import "../global.css";
 
 const TrendingProducts = () => {
   const router = useRouter();
+  const {  products  } = useProductsStore();
 
   // Get top rated products as trending
   const trendingProducts = products.filter((p) => p.rating >= 4.5).slice(0, 6);
@@ -15,11 +17,11 @@ const TrendingProducts = () => {
   return (
     <View className="mb-6">
       <View className="flex-row justify-between items-center mb-4 px-4">
-        <Text className="font-futura-bold text-xl text-slate-900">
+        <Text className="font-bold text-xl text-slate-900 dark:text-white">
           Trending Now
         </Text>
         <Pressable onPress={() => router.push("/(tabs)/shop" as any)}>
-          <Text className="font-futura-medium text-slate-600 text-sm">
+          <Text className="font-medium text-slate-600 dark:text-neutral-400 text-sm">
             See All →
           </Text>
         </Pressable>
@@ -34,7 +36,7 @@ const TrendingProducts = () => {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => router.push(`/product/${item.id}` as any)}
-            className="bg-white rounded-xl overflow-hidden"
+            className="bg-white dark:bg-transparent rounded-xl overflow-hidden"
             style={{ width: 160 }}
           >
             <Image
@@ -42,24 +44,24 @@ const TrendingProducts = () => {
               style={{ width: 160, height: 180 }}
               resizeMode="cover"
             />
-            <View className="p-3">
-              <Text className="text-xs text-gray-500 uppercase font-futura">
-                {item.brand}
+            <View className="p-3 dark:bg-transparent">
+              <Text className="text-xs text-gray-500 uppercase font-normal">
+                {item.brand?.toUpperCase()}
               </Text>
               <Text
-                className="font-futura-medium text-sm mt-1"
+                className="font-medium text-xs mt-1 text-black dark:text-white"
                 numberOfLines={2}
               >
                 {item.name}
               </Text>
 
               <View className="flex-row items-center justify-between mt-2">
-                <Text className="font-futura-demi text-slate-900">
+                <Text className="font-semibold text-slate-900 dark:text-white">
                   {formatPrice(item.price)}
                 </Text>
                 <View className="flex-row items-center">
                   <Ionicons name="star" size={12} color="#fbbf24" />
-                  <Text className="font-futura text-xs text-gray-600 ml-1">
+                  <Text className="font-normal text-xs text-gray-600 dark:text-neutral-400 ml-1">
                     {item.rating}
                   </Text>
                 </View>

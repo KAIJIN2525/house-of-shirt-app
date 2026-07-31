@@ -1,104 +1,340 @@
+import { HouseLoader } from "@/components/loading/HouseLoader";
+import { HouseFeedbackModal } from "@/components/feedback/HouseFeedbackModal";
 import { formatPrice } from "@/constants";
-import { products } from "@/constants/products";
+import type { ProductSizeOption } from "@/constants/products";
+import { useAuthStore } from "@/stores/authStore";
+import { useBagStore } from "@/stores/bagStore";
+import { useFavoritesStore } from "@/stores/favoritesStore";
+import { useProductsStore } from "@/stores/productsStore";
+import { useRestockRequestsStore } from "@/stores/restockRequestsStore";
+import { useThemeStore } from "@/stores/themeStore";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
+  Alert,
   Dimensions,
   FlatList,
   Image,
-  Modal,
   Pressable,
   ScrollView,
-  Text,
+  Share,
   View,
 } from "react-native";
+import { AppText as Text } from "@/components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
-import { useFavorites } from "@/contexts/FavoritesContext";
 
 const { width } = Dimensions.get("window");
 
-const ProductDetails = () => {
+const parseProductData = (description: string) => {
+  if (!description) {
+    return { description: "", details: [] as string[] };
+  }
+
+  const markers = ["PRODUCT DETAILS", "DETAILS:", "Product Details"];
+  let body = description;
+  let details: string[] = [];
+
+  for (const marker of markers) {
+    if (description.includes(marker)) {
+      const [intro, rawDetails = ""] = description.split(marker);
+      body = intro.trim();
+      details = rawDetails
+        .split(/\n|•|-/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+      break;
+    }
+  }
+
+  return {
+    description: body.replace(/^DESCRIPTION/i, "").trim(),
+    details,
+  };
+};
+
+export default function ProductDetails() {
   const { id } = useLocalSearchParams();
+  const productId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
-  const product = products.find((p) => p.id === id);
+  const { isDark } = useThemeStore();
+  const { products, fetchProducts, isLoading } = useProductsStore();
+  const { addToBag } = useBagStore();
+  const { isSubmitting, requestRestockNotification } = useRestockRequestsStore();
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
+  const { isAuthenticated } = useAuthStore();
   const scrollRef = useRef<ScrollView>(null);
+
+  const product = products.find((item) => item.id === productId);
 
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const [showSizePrompt, setShowSizePrompt] = useState(false);
+  const [pendingRestockSize, setPendingRestockSize] = useState("");
+  const [showRestockSuccess, setShowRestockSuccess] = useState(false);
+  const [restockError, setRestockError] = useState("");
+  const [showFitGuide, setShowFitGuide] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [fitPreference, setFitPreference] = useState<"slim" | "regular" | "relaxed">("regular");
+  const [bodyBuild, setBodyBuild] = useState<"narrow" | "average" | "broad">("average");
+  const [heightRange, setHeightRange] = useState<"short" | "average" | "tall" | "veryTall">("average");
+  const [weightRange, setWeightRange] = useState<"light" | "average" | "heavy" | "veryHeavy">("average");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const productImages = product?.images || [product?.image || ""];
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+        const saved = await AsyncStorage.getItem("@user_size_profile");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.fitPreference) setFitPreference(parsed.fitPreference);
+          if (parsed.bodyBuild) setBodyBuild(parsed.bodyBuild);
+          if (parsed.heightRange) setHeightRange(parsed.heightRange);
+          if (parsed.weightRange) setWeightRange(parsed.weightRange);
+          setHasInteracted(true);
+        }
+      } catch (e) {
+        console.error("Failed to load size profile:", e);
+      }
+    };
+    void loadProfile();
+  }, []);
 
-  // Animated values for each dot
-  const dotAnimations = useRef(
-    productImages.map(() => new Animated.Value(0))
-  ).current;
+  const saveSizeProfile = async (
+    fit: typeof fitPreference,
+    build: typeof bodyBuild,
+    h: typeof heightRange,
+    w: typeof weightRange
+  ) => {
+    try {
+      const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+      await AsyncStorage.setItem(
+        "@user_size_profile",
+        JSON.stringify({ fitPreference: fit, bodyBuild: build, heightRange: h, weightRange: w })
+      );
+    } catch (e) {
+      console.error("Failed to save size profile:", e);
+    }
+  };
 
-  if (!product) {
+  useEffect(() => {
+    void fetchProducts();
+  }, [fetchProducts, productId]);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [productId]);
+
+  const productImages = useMemo(() => {
+    const images =
+      product?.images && product.images.length > 0
+        ? product.images.filter(Boolean)
+        : [product?.image].filter(Boolean);
+
+    return images.length > 0 ? images : [];
+  }, [product]);
+
+  const sizeOptions = useMemo<ProductSizeOption[]>(() => {
+    if (!product) {
+      return [];
+    }
+
+    if (product.sizeOptions && product.sizeOptions.length > 0) {
+      return product.sizeOptions;
+    }
+
+    return (product.sizes ?? []).map((size) => ({
+      value: size,
+      available: true,
+      inventoryQuantity: 0,
+    }));
+  }, [product]);
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    const nextIndex = viewableItems?.[0]?.index;
+    if (typeof nextIndex === "number") {
+      setActiveImageIndex(nextIndex);
+    }
+  }).current;
+
+  const recommendedSize = useMemo(() => {
+    if (!product) return "M";
+    const availableSizes = sizeOptions.filter((option) => option.available);
+    const targetList = availableSizes.length ? availableSizes.map((option) => option.value) : (product.sizes?.length ? product.sizes : ["S", "M", "L", "XL"]);
+    const sizeOrder = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"];
+    let baseIndex = weightRange === "light" ? (heightRange === "short" ? 0 : 1) : weightRange === "average" ? (heightRange === "short" ? 1 : 2) : weightRange === "heavy" ? (heightRange === "veryTall" ? 4 : 3) : (heightRange === "veryTall" ? 6 : 5);
+    if (bodyBuild === "narrow" || fitPreference === "slim") baseIndex -= 1;
+    if (bodyBuild === "broad" || fitPreference === "relaxed") baseIndex += 1;
+    const finalSize = sizeOrder[Math.min(sizeOrder.length - 1, Math.max(0, baseIndex))];
+    if (targetList.includes(finalSize)) return finalSize;
+    return targetList.reduce((closest, size) => Math.abs(sizeOrder.indexOf(size) - baseIndex) < Math.abs(sizeOrder.indexOf(closest) - baseIndex) ? size : closest, targetList[0] || "M");
+  }, [bodyBuild, fitPreference, heightRange, product, sizeOptions, weightRange]);
+
+  if (!product && isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text className="font-futura-demi text-lg">Product not found</Text>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-[#050505]">
+        <HouseLoader label="LOADING PRODUCT" />
       </View>
     );
   }
 
+  if (!product) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-[#050505] px-6">
+        <Text className="font-semibold text-lg text-black dark:text-white">
+          Product not found
+        </Text>
+      </View>
+    );
+  }
+
+  const { description: parsedDescription, details: parsedDetails } = parseProductData(
+    product.description || "",
+  );
   const handleFavoriteToggle = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await toggleFavorite(product.id);
   };
 
   const handleAddToBag = async () => {
-    if (!selectedSize) {
-      alert("Please select a size");
+    let currentProduct = product;
+    let currentSizeOptions = sizeOptions;
+    let selectedSizeOption = currentSizeOptions.find(
+      (option) => option.value === selectedSize,
+    );
+
+    if (sizeOptions.length > 0 && !selectedSize) {
+      setShowSizePrompt(true);
+      return;
+    }
+
+    if (selectedSizeOption && !selectedSizeOption.available) {
+      setPendingRestockSize(selectedSizeOption.value);
+      return;
+    }
+
+    const findSelectedVariant = (candidate: typeof product) =>
+      candidate.variants?.find((variant) =>
+        variant.selectedOptions.every((option) => {
+        const name = option.name.toLowerCase();
+        if (["size", "shoe size", "eu size", "us size", "uk size"].includes(name)) {
+          return !selectedSize || option.value.toLowerCase() === selectedSize.toLowerCase();
+        }
+        if (["color", "colour"].includes(name)) {
+          return !selectedColor || option.value.toLowerCase() === selectedColor.toLowerCase();
+        }
+        return true;
+        }),
+      );
+    let selectedVariant = findSelectedVariant(currentProduct);
+    let variantId =
+      selectedVariant?.id ??
+      selectedSizeOption?.variantId ??
+      currentProduct.variantId;
+
+    if (!variantId) {
+      await fetchProducts();
+      const refreshedProduct =
+        useProductsStore.getState().getProductById(product.id);
+
+      if (refreshedProduct) {
+        currentProduct = refreshedProduct;
+        currentSizeOptions = refreshedProduct.sizeOptions ?? [];
+        selectedSizeOption = currentSizeOptions.find(
+          (option) => option.value === selectedSize,
+        );
+        selectedVariant = findSelectedVariant(currentProduct);
+        variantId =
+          selectedVariant?.id ??
+          selectedSizeOption?.variantId ??
+          currentProduct.variantId;
+      }
+    }
+
+    if (!variantId) {
+      Alert.alert("Product unavailable", "This selection is not linked to a Shopify variant. Refresh the catalogue and try again.");
+      return;
+    }
+    if (selectedVariant && !selectedVariant.available) {
+      setPendingRestockSize(selectedSize || "One Size");
       return;
     }
 
     setIsAdding(true);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Simulate adding to bag
+    await Promise.resolve(addToBag({
+      productId: currentProduct.id,
+      variantId,
+      name: currentProduct.name,
+      image: currentProduct.image,
+      price: selectedVariant?.price || currentProduct.price,
+      quantity: 1,
+      size: selectedSize || "One Size",
+      color: selectedColor || "Default",
+    }));
+
     setTimeout(() => {
       setIsAdding(false);
       setShowSuccessModal(true);
 
-      // Hide modal after 2 seconds
       setTimeout(() => {
         setShowSuccessModal(false);
       }, 2000);
-    }, 1000);
+    }, 800);
   };
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      const newIndex = viewableItems[0].index;
+  const handleUnavailableSizePress = async (size: string) => {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setPendingRestockSize(size);
+  };
 
-      // Animate all dots
-      dotAnimations.forEach((anim, index) => {
-        Animated.spring(anim, {
-          toValue: index === newIndex ? 1 : 0,
-          useNativeDriver: false,
-          tension: 50,
-          friction: 7,
-        }).start();
-      });
-
-      setCurrentImageIndex(newIndex);
+  const handleRestockRequest = async () => {
+    if (!pendingRestockSize) {
+      return;
     }
-  }).current;
+
+    setRestockError("");
+    try {
+      await requestRestockNotification(product, pendingRestockSize);
+      setPendingRestockSize("");
+      setShowRestockSuccess(true);
+    } catch (error) {
+      setRestockError(
+        error instanceof Error
+          ? error.message
+          : "We could not save your restock request. Please try again.",
+      );
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const url = `houseofshirt://product/${product.id}`;
+      const message = `Check out this amazing product: ${product.name} - ${formatPrice(product.price)}\n\nDiscover the collection at House of Shirts.`;
+
+      await Share.share({
+        message: `${message}\n${url}`,
+        url,
+      });
+    } catch (error) {
+      console.error("Error sharing product:", error);
+      await Share.share({
+        message: `${product.name} - ${formatPrice(product.price)}`,
+      });
+    }
+  };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-white dark:bg-[#050505]">
       <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
-        {/* Image Carousel Section */}
         <View className="relative">
           <FlatList
             data={productImages}
@@ -107,7 +343,7 @@ const ProductDetails = () => {
             showsHorizontalScrollIndicator={false}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-            keyExtractor={(item, index) => index.toString()}
+            keyExtractor={(_, index) => index.toString()}
             renderItem={({ item }) => (
               <Image
                 source={{ uri: item }}
@@ -117,137 +353,141 @@ const ProductDetails = () => {
             )}
           />
 
-          {/* Image Dots Indicator */}
-          {productImages.length > 1 && (
-            <View className="absolute bottom-8 left-0 right-0 flex-row justify-center items-center gap-1.5">
-              {productImages.map((_, index) => {
-                const dotWidth = dotAnimations[index].interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [8, 32],
-                });
-
-                const dotOpacity = dotAnimations[index].interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.4, 1],
-                });
-
-                return (
-                  <Animated.View
-                    key={index}
-                    style={{
-                      width: dotWidth,
-                      opacity: dotOpacity,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: "white",
-                    }}
-                  />
-                );
-              })}
+          {productImages.length > 1 ? (
+            <View className="absolute bottom-8 left-0 right-0 flex-row items-center justify-center gap-1.5">
+              {productImages.map((_, index) => (
+                <View
+                  key={index}
+                  style={{
+                    width: activeImageIndex === index ? 32 : 8,
+                    opacity: activeImageIndex === index ? 1 : 0.4,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: "white",
+                  }}
+                />
+              ))}
             </View>
-          )}
+          ) : null}
 
-          {/* Back Button */}
-          <SafeAreaView className="absolute top-4 left-0 right-0">
+          <SafeAreaView className="absolute left-0 right-0 top-4">
             <View className="flex-row justify-between px-4">
               <Pressable
                 onPress={() => router.back()}
-                className="w-10 h-10 rounded-full bg-white/90 items-center justify-center"
+                className="h-10 w-10 items-center justify-center rounded-full bg-white/90"
               >
                 <Ionicons name="arrow-back" size={20} color="#0f172a" />
               </Pressable>
 
-              {/* Favorite Button */}
               <Pressable
-                onPress={handleFavoriteToggle}
-                className="w-10 h-10 rounded-full bg-white/90 items-center justify-center"
+                onPress={handleShare}
+                className="h-10 w-10 items-center justify-center rounded-full bg-white/90"
               >
                 <Ionicons
-                  name={isFavorite(product.id) ? "heart" : "heart-outline"}
+                  name="share-social-outline"
                   size={20}
-                  color={isFavorite(product.id) ? "#ef4444" : "#0f172a"}
+                  color="#0f172a"
                 />
               </Pressable>
             </View>
           </SafeAreaView>
         </View>
 
-        {/* Product Info Card */}
-        <View className="bg-white rounded-t-3xl -mt-6 px-6 pt-6">
-          {/* Brand & Name */}
-          <Text className="text-xs text-gray-500 uppercase font-futura tracking-wider">
-            {product.brand}
+        <View className="rounded-t-3xl -mt-6 bg-white px-6 pt-6 dark:bg-[#050505]">
+          <Text className="text-[13px] font-bold uppercase tracking-[2px] text-gray-400">
+            {product.brand?.toUpperCase()}
           </Text>
-          <Text className="font-futura-bold text-2xl text-slate-900 mt-1 leading-tight">
+          <Text className="mt-1 text-base font-bold leading-tight text-slate-900 dark:text-white">
             {product.name}
           </Text>
 
-          {/* Rating */}
-          <View className="flex-row items-center mt-3">
+          <View className="mt-3 flex-row items-center">
             <Ionicons name="star" size={16} color="#fbbf24" />
-            <Text className="font-futura-demi text-slate-900 ml-1">
+            <Text className="ml-1 font-semibold text-slate-900 dark:text-white">
               {product.rating}
             </Text>
-            <Text className="font-futura text-gray-500 ml-2 text-sm">
+            <Text className="ml-2 text-sm font-normal text-gray-500">
               (128 reviews)
             </Text>
           </View>
 
-          {/* Price */}
-          <Text className="font-futura-demi text-3xl text-slate-900 mt-4">
+          <Text className="mt-4 text-3xl font-semibold text-slate-900 dark:text-white">
             {formatPrice(product.price)}
           </Text>
 
-          {/* Size Selection */}
-          <View className="mt-8">
-            <Text className="font-futura-demi text-base text-slate-900 mb-3">
-              Select Size
-            </Text>
-            <View className="flex-row gap-3 flex-wrap">
-              {product.sizes?.map((size) => (
-                <Pressable
-                  key={size}
-                  onPress={() => setSelectedSize(size)}
-                  className={`px-6 py-3 rounded-lg border-2 ${
-                    selectedSize === size
-                      ? "bg-slate-900 border-slate-900"
-                      : "bg-white border-gray-300"
-                  }`}
-                >
-                  <Text
-                    className={`font-futura-medium ${
-                      selectedSize === size ? "text-white" : "text-slate-900"
-                    }`}
-                  >
-                    {size}
+          {sizeOptions.length > 0 ? (
+            <View className="mt-8">
+              <View className="mb-3 flex-row items-center justify-between">
+                <Text className="text-base font-semibold text-slate-900 dark:text-white">
+                  Select Size
+                </Text>
+                <Pressable onPress={() => setShowFitGuide(true)}>
+                  <Text className="text-xs font-bold uppercase tracking-[1.2px] text-slate-900 dark:text-white">
+                    Fit guide
                   </Text>
                 </Pressable>
-              ))}
-            </View>
-          </View>
+              </View>
+              <View className="flex-row flex-wrap gap-3">
+                {sizeOptions.map((sizeOption) => {
+                  const isSelected = selectedSize === sizeOption.value;
+                  const isUnavailable = !sizeOption.available;
 
-          {/* Color Selection */}
-          {product.colors && product.colors.length > 0 && (
+                  return (
+                    <Pressable
+                      key={sizeOption.value}
+                      onPress={() =>
+                        isUnavailable
+                          ? void handleUnavailableSizePress(sizeOption.value)
+                          : setSelectedSize(sizeOption.value)
+                      }
+                      className={`rounded-lg px-6 py-3 ${
+                        isUnavailable
+                          ? "bg-neutral-200 dark:bg-neutral-800"
+                          : isSelected
+                            ? "bg-slate-900 dark:bg-white"
+                            : "bg-gray-100 dark:bg-white/10"
+                      }`}
+                    >
+                      <Text
+                        preserveCase
+                        className={`font-medium uppercase ${
+                          isUnavailable
+                            ? "text-neutral-500 dark:text-neutral-300"
+                            : isSelected
+                              ? "text-white dark:text-black"
+                              : "text-slate-900 dark:text-white"
+                        } ${isUnavailable ? "line-through" : ""}`}
+                      >
+                        {sizeOption.value}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
+
+          {(product.colors?.length ?? 0) > 0 ? (
             <View className="mt-6">
-              <Text className="font-futura-demi text-base text-slate-900 mb-3">
+              <Text className="mb-3 text-base font-semibold text-slate-900 dark:text-white">
                 Select Color
               </Text>
-              <View className="flex-row gap-3">
-                {product.colors.map((color) => (
+              <View className="flex-row flex-wrap gap-3">
+                {product.colors?.map((color) => (
                   <Pressable
                     key={color}
                     onPress={() => setSelectedColor(color)}
-                    className={`px-4 py-2 rounded-lg border-2 ${
+                    className={`rounded-lg px-4 py-2 ${
                       selectedColor === color
-                        ? "bg-slate-900 border-slate-900"
-                        : "bg-white border-gray-300"
+                        ? "bg-slate-900 dark:bg-white"
+                        : "bg-gray-100 dark:bg-white/10"
                     }`}
                   >
                     <Text
-                      className={`font-futura-medium text-sm ${
+                      className={`text-sm font-medium ${
                         selectedColor === color
-                          ? "text-white"
-                          : "text-slate-900"
+                          ? "text-white dark:text-black"
+                          : "text-slate-900 dark:text-white"
                       }`}
                     >
                       {color}
@@ -256,111 +496,389 @@ const ProductDetails = () => {
                 ))}
               </View>
             </View>
-          )}
+          ) : null}
 
-          {/* Product Description */}
-          <View className="mt-8">
-            <Text className="font-futura-demi text-base text-slate-900 mb-2">
-              About this product
-            </Text>
-            <View className="h-px bg-gray-200 mb-4" />
-            <Text
-              className="font-futura text-gray-700 leading-6"
-              numberOfLines={isExpanded ? undefined : 3}
-            >
-              {product.description}
-            </Text>
-            <Pressable
-              onPress={() => setIsExpanded(!isExpanded)}
-              className="mt-2"
-            >
-              <Text className="font-futura-medium text-slate-900">
-                {isExpanded ? "Show Less" : "Read More"} →
+          {parsedDescription ? (
+            <View className="mt-8">
+              <Text className="mb-2 text-base font-semibold text-slate-900 dark:text-white">
+                About this product
               </Text>
-            </Pressable>
-          </View>
+              <View className="mb-4 h-px bg-gray-200 dark:bg-white/10" />
+              <Text
+                className="leading-6 text-gray-700 dark:text-gray-300"
+                numberOfLines={isExpanded ? undefined : 3}
+              >
+                {parsedDescription}
+              </Text>
+              {parsedDescription.length > 150 ? (
+                <Pressable
+                  onPress={() => setIsExpanded(!isExpanded)}
+                  className="mt-2"
+                >
+                  <Text className="font-medium text-slate-900 dark:text-white">
+                    {isExpanded ? "Show Less" : "Read More"} {"->"}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
 
-          {/* Product Details */}
-          <View className="mt-6 mb-32">
-            <Text className="font-futura-demi text-base text-slate-900 mb-2">
+          <View className="mb-32 mt-6">
+            <Text className="mb-2 text-base font-semibold text-slate-900 dark:text-white">
               Product Details
             </Text>
-            <View className="h-px bg-gray-200 mb-4" />
+            <View className="mb-4 h-px bg-gray-200 dark:bg-white/10" />
             <View className="gap-2">
-              <Text className="font-futura text-gray-700">
-                • Material: 100% Premium Cotton
-              </Text>
-              <Text className="font-futura text-gray-700">
-                • Fit: {product.category === "T-Shirts" ? "Regular" : "Relaxed"}
-              </Text>
-              <Text className="font-futura text-gray-700">
-                • Care: Machine wash cold
-              </Text>
-              <Text className="font-futura text-gray-700">
-                • Model height: 6'1" wearing size M
-              </Text>
+              {parsedDetails.length > 0 ? (
+                parsedDetails.map((detail, index) => (
+                  <Text
+                    key={`${detail}-${index}`}
+                    className="font-normal text-gray-700 dark:text-gray-300"
+                  >
+                    - {detail}
+                  </Text>
+                ))
+              ) : (
+                <>
+                  <Text className="font-normal text-gray-700 dark:text-gray-300">
+                    - Material: 100% Premium Cotton
+                  </Text>
+                  <Text className="font-normal text-gray-700 dark:text-gray-300">
+                    - Fit: {product.category === "T-Shirts" ? "Regular" : "Relaxed"}
+                  </Text>
+                  <Text className="font-normal text-gray-700 dark:text-gray-300">
+                    - Care: Machine wash cold
+                  </Text>
+                  <Text className="font-normal text-gray-700 dark:text-gray-300">
+                    - Model height: 6&apos;1&quot; wearing size M
+                  </Text>
+                </>
+              )}
             </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* Fixed Bottom Action Bar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4 rounded-t-lg">
+      <View className="absolute bottom-0 left-0 right-0 rounded-t-lg border-t border-gray-100 bg-white px-6 py-4 dark:border-white/5 dark:bg-[#050505]">
         <SafeAreaView edges={["bottom"]} className="flex-row gap-3">
-          {/* Add to Bag Button */}
           <Pressable
             onPress={handleAddToBag}
-            disabled={!selectedSize || isAdding}
-            className={`flex-1 h-14 rounded-xl items-center justify-center flex-row ${
-              !selectedSize || isAdding ? "bg-gray-300" : "bg-slate-900"
+            disabled={isAdding}
+            className={`h-14 flex-1 flex-row items-center justify-center rounded-xl ${
+              isAdding ? "bg-gray-300 dark:bg-white/10" : "bg-slate-900 dark:bg-white"
             }`}
           >
             {isAdding ? (
               <>
-                <ActivityIndicator color="#ffffff" size="small" />
-                <Text className="font-futura-demi text-white text-base ml-2">
+                <ActivityIndicator color={isDark ? "#d4d4d4" : "#ffffff"} size="small" />
+                <Text className="ml-2 text-base font-semibold text-slate-700 dark:text-neutral-300">
                   Adding...
                 </Text>
               </>
             ) : (
-              <Text className="font-futura-demi text-white text-base">
+              <Text className="text-base font-semibold text-white dark:text-black">
                 Add to Bag
               </Text>
             )}
           </Pressable>
 
-          {/* Favorite Icon Button */}
           <Pressable
             onPress={handleFavoriteToggle}
-            className="w-14 h-14 rounded-xl border-2 border-gray-300 items-center justify-center"
+            className="h-14 w-14 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10"
           >
             <Ionicons
               name={isFavorite(product.id) ? "heart" : "heart-outline"}
               size={24}
-              color={isFavorite(product.id) ? "#ef4444" : "#0f172a"}
+              color={isFavorite(product.id) ? "#ef4444" : isDark ? "#ffffff" : "#0f172a"}
             />
           </Pressable>
         </SafeAreaView>
       </View>
 
-      {/* Success Modal */}
-      <Modal transparent visible={showSuccessModal} animationType="fade">
-        <View className="flex-1 bg-black/50 items-center justify-center">
-          <View className="bg-white rounded-3xl p-8 mx-6 items-center shadow-lg">
-            <View className="w-16 h-16 rounded-full bg-green-500 items-center justify-center mb-4">
-              <Ionicons name="checkmark" size={32} color="white" />
-            </View>
-            <Text className="font-futura-bold text-xl text-slate-900 mb-2">
-              Added to Bag!
+      <HouseFeedbackModal
+        visible={showSizePrompt}
+        type="info"
+        title="Choose a size"
+        message="Select an available size before adding this piece to your bag."
+        onRequestClose={() => setShowSizePrompt(false)}
+        primaryAction={{
+          label: "Got it",
+          onPress: () => setShowSizePrompt(false),
+        }}
+      />
+
+      <HouseFeedbackModal
+        visible={showSuccessModal}
+        type="success"
+        title="Added to bag"
+        message={`${product.name} is waiting for you at checkout.`}
+        onRequestClose={() => setShowSuccessModal(false)}
+        primaryAction={{
+          label: "View bag",
+          onPress: () => {
+            setShowSuccessModal(false);
+            router.push("/(tabs)/bag" as any);
+          },
+        }}
+        secondaryAction={{
+          label: "Keep shopping",
+          onPress: () => setShowSuccessModal(false),
+        }}
+      />
+
+      <HouseFeedbackModal
+        visible={Boolean(pendingRestockSize)}
+        type="info"
+        title="Size unavailable"
+        message={
+          isAuthenticated
+            ? `Size ${pendingRestockSize} is currently out of stock. We can notify you as soon as it returns.`
+            : `Size ${pendingRestockSize} is currently out of stock. Sign in so we can notify you when it's back.`
+        }
+        onRequestClose={() => {
+          setPendingRestockSize("");
+          setRestockError("");
+        }}
+        primaryAction={{
+          label: isAuthenticated
+            ? isSubmitting ? "Saving..." : "Notify me"
+            : "Sign in",
+          onPress: () => {
+            if (!isAuthenticated) {
+              setPendingRestockSize("");
+              router.push("/(auth)/login" as any);
+            } else if (!isSubmitting) {
+              void handleRestockRequest();
+            }
+          },
+        }}
+        secondaryAction={{
+          label: "Not now",
+          onPress: () => {
+            setPendingRestockSize("");
+            setRestockError("");
+          },
+        }}
+      />
+
+      <HouseFeedbackModal
+        visible={Boolean(restockError)}
+        type="error"
+        title="Request failed"
+        message={restockError}
+        onRequestClose={() => setRestockError("")}
+        primaryAction={{
+          label: "Close",
+          onPress: () => setRestockError(""),
+        }}
+      />
+
+      <HouseFeedbackModal
+        visible={showRestockSuccess}
+        type="success"
+        title="Notification saved"
+        message="We will let you know when that size is available again."
+        onRequestClose={() => setShowRestockSuccess(false)}
+        primaryAction={{
+          label: "Perfect",
+          onPress: () => setShowRestockSuccess(false),
+        }}
+      />
+
+
+      {showFitGuide ? (
+        <View className="absolute bottom-0 left-0 right-0 border-t border-black/10 bg-white px-6 pb-8 pt-5 dark:border-white/10 dark:bg-[#050505] z-50">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="font-bold text-[10px] uppercase tracking-[1.5px] text-neutral-400">
+              Size & Fit Calculator
             </Text>
-            <Text className="font-futura text-gray-600 text-center">
-              {product.name} has been added to your bag
-            </Text>
+            <Pressable onPress={() => setShowFitGuide(false)}>
+              <Ionicons name="close" size={20} color={isDark ? "#fff" : "#000"} />
+            </Pressable>
           </View>
+          
+          <Text className="mb-4 text-xs font-normal text-neutral-500">
+            Tell us your height, weight, and preferences to calculate your recommended size.
+          </Text>
+
+          {/* Height Selection */}
+          <Text className="font-bold text-[9px] uppercase tracking-[1.2px] text-gray-400 mb-2">
+            Height
+          </Text>
+          <View className="flex-row gap-2 mb-3">
+            {[
+              { id: "short", label: "<170cm" },
+              { id: "average", label: "170-180cm" },
+              { id: "tall", label: "180-190cm" },
+              { id: "veryTall", label: ">190cm" },
+            ].map((opt) => (
+              <Pressable
+                key={opt.id}
+                onPress={() => {
+                  setHeightRange(opt.id as any);
+                  setHasInteracted(true);
+                  void saveSizeProfile(fitPreference, bodyBuild, opt.id as any, weightRange);
+                }}
+                className={`flex-1 border py-2.5 ${
+                  heightRange === opt.id
+                    ? "border-black bg-black dark:border-white dark:bg-white"
+                    : "border-black/10 bg-white dark:border-white/10 dark:bg-[#101215]"
+                }`}
+              >
+                <Text
+                  className={`text-center text-[9px] font-bold uppercase tracking-[0.5px] ${
+                    heightRange === opt.id
+                      ? "text-white dark:text-black"
+                      : "text-black dark:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Weight Selection */}
+          <Text className="font-bold text-[9px] uppercase tracking-[1.2px] text-gray-400 mb-2">
+            Weight
+          </Text>
+          <View className="flex-row gap-2 mb-3">
+            {[
+              { id: "light", label: "<65kg" },
+              { id: "average", label: "65-75kg" },
+              { id: "heavy", label: "75-85kg" },
+              { id: "veryHeavy", label: ">85kg" },
+            ].map((opt) => (
+              <Pressable
+                key={opt.id}
+                onPress={() => {
+                  setWeightRange(opt.id as any);
+                  setHasInteracted(true);
+                  void saveSizeProfile(fitPreference, bodyBuild, heightRange, opt.id as any);
+                }}
+                className={`flex-1 border py-2.5 ${
+                  weightRange === opt.id
+                    ? "border-black bg-black dark:border-white dark:bg-white"
+                    : "border-black/10 bg-white dark:border-white/10 dark:bg-[#101215]"
+                }`}
+              >
+                <Text
+                  className={`text-center text-[9px] font-bold uppercase tracking-[0.5px] ${
+                    weightRange === opt.id
+                      ? "text-white dark:text-black"
+                      : "text-black dark:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Body Build */}
+          <Text className="font-bold text-[9px] uppercase tracking-[1.2px] text-gray-400 mb-2">
+            Body Build
+          </Text>
+          <View className="flex-row gap-2 mb-3">
+            {[
+              { id: "narrow", label: "Narrow / Slim" },
+              { id: "average", label: "Average" },
+              { id: "broad", label: "Broad" },
+            ].map((opt) => (
+              <Pressable
+                key={opt.id}
+                onPress={() => {
+                  setBodyBuild(opt.id as any);
+                  setHasInteracted(true);
+                  void saveSizeProfile(fitPreference, opt.id as any, heightRange, weightRange);
+                }}
+                className={`flex-1 border py-2.5 ${
+                  bodyBuild === opt.id
+                    ? "border-black bg-black dark:border-white dark:bg-white"
+                    : "border-black/10 bg-white dark:border-white/10 dark:bg-[#101215]"
+                }`}
+              >
+                <Text
+                  className={`text-center text-[9px] font-bold uppercase tracking-[0.5px] ${
+                    bodyBuild === opt.id
+                      ? "text-white dark:text-black"
+                      : "text-black dark:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Fit Preference */}
+          <Text className="font-bold text-[9px] uppercase tracking-[1.2px] text-gray-400 mb-2">
+            Fit Preference
+          </Text>
+          <View className="flex-row gap-2 mb-5">
+            {[
+              { id: "slim", label: "Sharp / Fitted" },
+              { id: "regular", label: "Regular" },
+              { id: "relaxed", label: "Relaxed / Oversized" },
+            ].map((opt) => (
+              <Pressable
+                key={opt.id}
+                onPress={() => {
+                  setFitPreference(opt.id as any);
+                  setHasInteracted(true);
+                  void saveSizeProfile(opt.id as any, bodyBuild, heightRange, weightRange);
+                }}
+                className={`flex-1 border py-2.5 ${
+                  fitPreference === opt.id
+                    ? "border-black bg-black dark:border-white dark:bg-white"
+                    : "border-black/10 bg-white dark:border-white/10 dark:bg-[#101215]"
+                }`}
+              >
+                <Text
+                  className={`text-center text-[9px] font-bold uppercase tracking-[0.5px] ${
+                    fitPreference === opt.id
+                      ? "text-white dark:text-black"
+                      : "text-black dark:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Recommendation Banner */}
+          {hasInteracted ? (
+            <View className="bg-neutral-100 p-4 dark:bg-[#101215] flex-row justify-between items-center">
+              <View>
+                <Text className="text-[10px] font-bold text-neutral-400 uppercase tracking-[1px]">
+                  Recommended Size
+                </Text>
+                <Text className="text-xl font-bold text-black dark:text-white mt-1">
+                  Size {recommendedSize}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  setSelectedSize(recommendedSize);
+                  setShowFitGuide(false);
+                }}
+                className="bg-black px-5 py-3 dark:bg-white"
+              >
+                <Text className="text-[10px] font-bold text-white dark:text-black uppercase tracking-[1px]">
+                  Apply Size
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View className="bg-neutral-100 p-4 dark:bg-[#101215]">
+              <Text className="text-[10px] font-bold text-neutral-400 uppercase tracking-[1px] text-center">
+                Select your measurements above to get your recommended size
+              </Text>
+            </View>
+          )}
         </View>
-      </Modal>
+      ) : null}
     </View>
   );
-};
-
-export default ProductDetails;
+}

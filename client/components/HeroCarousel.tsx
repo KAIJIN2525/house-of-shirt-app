@@ -84,7 +84,6 @@ const HeroCarousel = () => {
         )}
       />
 
-      {/* Pagination Dots */}
       <View className="flex-row justify-center items-center gap-1.5 mt-4">
         {HERO_SLIDES.map((_, index) => {
           const dotWidth = dotAnimations[index].interpolate({

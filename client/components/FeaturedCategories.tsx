@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
+import { AppText as Text } from "@/components/AppText";
 import "../global.css";
 
 interface Category {
@@ -51,7 +52,7 @@ const FeaturedCategories = () => {
   return (
     <View className="mb-6">
       <View className="flex-row justify-between items-center mb-4 px-4">
-        <Text className="font-futura-bold text-xl text-slate-900">
+        <Text className="font-bold text-xl text-slate-900">
           Shop by Category
         </Text>
       </View>
@@ -70,7 +71,7 @@ const FeaturedCategories = () => {
               resizeMode="cover"
             />
             <View className="absolute inset-0 bg-black/30 justify-end p-4">
-              <Text className="font-futura-bold text-white text-lg">
+              <Text className="font-bold text-white text-lg">
                 {category.name}
               </Text>
             </View>

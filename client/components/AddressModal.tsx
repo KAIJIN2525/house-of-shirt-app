@@ -1,6 +1,7 @@
-import { View, Text, Modal, Pressable, ScrollView, Alert } from "react-native";
+import { View, Modal, Pressable, ScrollView } from "react-native";
+import { AppText as Text } from "@/components/AppText";
 import React, { useState } from "react";
-import { useAddress } from "@/contexts/AddressContext";
+import { useAddressStore } from "@/stores/addressStore";
 import { Ionicons } from "@expo/vector-icons";
 import "../global.css";
 import AddressFormModal from "./AddressFormModal";
@@ -16,7 +17,7 @@ const AddressModal = ({
   onClose,
   onSelectAddress,
 }: AddressModalProps) => {
-  const { addresses, deleteAddress, setDefaultAddress } = useAddress();
+  const {  addresses  } = useAddressStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -53,7 +54,7 @@ const AddressModal = ({
         <View className="bg-white rounded-t-3xl" style={{ maxHeight: "80%" }}>
           {/* Header */}
           <View className="px-4 py-4 border-b border-gray-200 flex-row items-center justify-between">
-            <Text className="font-futura-bold text-xl text-slate-900">
+            <Text className="font-bold text-xl text-slate-900">
               Select Address
             </Text>
             <Pressable onPress={onClose}>
@@ -68,7 +69,7 @@ const AddressModal = ({
               className="border-2 border-dashed border-slate-300 py-4 rounded-lg flex-row items-center justify-center mb-4"
             >
               <Ionicons name="add-circle-outline" size={24} color="#64748b" />
-              <Text className="font-futura-medium text-slate-600 ml-2">
+              <Text className="font-medium text-slate-600 ml-2">
                 Add New Address
               </Text>
             </Pressable>
@@ -89,23 +90,23 @@ const AddressModal = ({
                     {/* Default Badge */}
                     {address.isDefault && (
                       <View className="bg-green-100 px-2 py-1 rounded self-start mb-2">
-                        <Text className="font-futura-medium text-xs text-green-700">
+                        <Text className="font-medium text-xs text-green-700">
                           Default
                         </Text>
                       </View>
                     )}
 
                     {/* Address Info */}
-                    <Text className="font-futura-demi text-base text-slate-900">
+                    <Text className="font-semibold text-base text-slate-900">
                       {address.fullName}
                     </Text>
-                    <Text className="font-futura text-sm text-gray-600 mt-1">
+                    <Text className="font-normal text-sm text-gray-600 mt-1">
                       {address.phoneNumber}
                     </Text>
-                    <Text className="font-futura text-sm text-gray-600 mt-2">
+                    <Text className="font-normal text-sm text-gray-600 mt-2">
                       {address.address}
                     </Text>
-                    <Text className="font-futura text-sm text-gray-600">
+                    <Text className="font-normal text-sm text-gray-600">
                       {address.city}, {address.state}
                     </Text>
 
@@ -114,7 +115,7 @@ const AddressModal = ({
                       onPress={() => handleEdit(address.id)}
                       className="mt-3 self-start"
                     >
-                      <Text className="font-futura-medium text-sm text-slate-900 underline">
+                      <Text className="font-medium text-sm text-slate-900 underline">
                         Edit
                       </Text>
                     </Pressable>
@@ -143,7 +144,7 @@ const AddressModal = ({
             {addresses.length === 0 && (
               <View className="items-center py-12">
                 <Ionicons name="location-outline" size={48} color="#cbd5e1" />
-                <Text className="font-futura-medium text-gray-600 mt-3">
+                <Text className="font-medium text-gray-600 mt-3">
                   No addresses saved
                 </Text>
               </View>
@@ -157,7 +158,7 @@ const AddressModal = ({
                 onPress={handleContinue}
                 className="bg-slate-900 py-4 rounded-lg items-center"
               >
-                <Text className="font-futura-demi text-white text-base">
+                <Text className="font-semibold text-white text-base">
                   Continue with this address
                 </Text>
               </Pressable>

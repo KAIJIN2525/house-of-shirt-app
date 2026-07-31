@@ -3,7 +3,8 @@ import { Product } from "@/constants/products";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
+import { AppText as Text } from "@/components/AppText";
 import "../global.css";
 
 interface ProductGridProps {
@@ -17,10 +18,10 @@ const ProductGrid = ({ products }: ProductGridProps) => {
     return (
       <View className="py-20 items-center justify-center">
         <Ionicons name="search-outline" size={48} color="#666" />
-        <Text className="font-futura-demi text-slate-900 mt-4">
+        <Text className="font-semibold text-slate-900 dark:text-white mt-4">
           No products found
         </Text>
-        <Text className="font-futura text-gray-500 text-sm mt-2">
+        <Text className="font-normal text-gray-500 dark:text-neutral-400 text-sm mt-2">
           Try adjusting your filters
         </Text>
       </View>
@@ -42,14 +43,14 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             resizeMode="cover"
           />
           <View className="p-3">
-            <Text className="text-xs text-gray-500 uppercase font-futura">
-              {item.brand}
+            <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-[1.5px]">
+              {item.brand?.toUpperCase()}
             </Text>
-            <Text className="font-futura-medium text-sm mt-1" numberOfLines={2}>
+            <Text className="font-medium text-xs mt-1 text-black dark:text-white" numberOfLines={2}>
               {item.name}
             </Text>
 
-            <Text className="mt-2 font-futura-demi text-base">
+            <Text className="mt-2 font-semibold text-base text-black dark:text-white">
               {formatPrice(item.price)}
             </Text>
           </View>

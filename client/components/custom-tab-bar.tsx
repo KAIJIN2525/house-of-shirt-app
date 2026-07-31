@@ -1,17 +1,25 @@
-import { View, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Animated, Platform } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { colors } from "@/constants/index";
 import { useEffect, useRef } from "react";
+import { useThemeStore } from "@/stores/themeStore";
 
 export function CustomTabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
+  const {  isDark  } = useThemeStore();
+
   return (
     <View style={styles.container}>
       {/* White tab bar background */}
-      <View style={styles.tabBar}>
+      <View
+        style={[
+          styles.tabBar,
+          isDark ? styles.tabBarDark : styles.tabBarLight,
+        ]}
+      >
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
@@ -35,6 +43,7 @@ export function CustomTabBar({
               isFocused={isFocused}
               onPress={onPress}
               options={options}
+              isDark={isDark}
             />
           );
         })}
@@ -43,7 +52,7 @@ export function CustomTabBar({
   );
 }
 
-function TabButton({ route, isFocused, onPress, options }: any) {
+function TabButton({ route, isFocused, onPress, options, isDark }: any) {
   const translateY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -53,7 +62,7 @@ function TabButton({ route, isFocused, onPress, options }: any) {
       damping: 15,
       stiffness: 150,
     }).start();
-  }, [isFocused]);
+  }, [isFocused, translateY]);
 
   return (
     <TouchableOpacity onPress={onPress} style={styles.tab} activeOpacity={0.7}>
@@ -61,12 +70,14 @@ function TabButton({ route, isFocused, onPress, options }: any) {
         style={[
           styles.iconContainer,
           isFocused && styles.activeIcon,
+          isFocused && Platform.OS === "android" ? styles.activeIconAndroid : undefined,
+          !isFocused && isDark ? styles.inactiveDarkIcon : undefined,
           { transform: [{ translateY }] },
         ]}
       >
         {options.tabBarIcon?.({
           focused: isFocused,
-          color: isFocused ? "#ffffff" : colors.textSecondary,
+          color: isFocused ? "#ffffff" : isDark ? "#a1a1aa" : colors.textSecondary,
           size: 24,
         })}
       </Animated.View>
@@ -83,15 +94,22 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: "row",
-    backgroundColor: "white",
     borderRadius: 30,
     height: 65,
     paddingHorizontal: 10,
-    elevation: 8,
+    elevation: Platform.OS === "android" ? 0 : 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
+  },
+  tabBarLight: {
+    backgroundColor: "white",
+  },
+  tabBarDark: {
+    backgroundColor: "#0f1115",
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
   },
   tab: {
     flex: 1,
@@ -105,12 +123,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 25,
   },
+  inactiveDarkIcon: {
+    backgroundColor: "transparent",
+  },
   activeIcon: {
     backgroundColor: colors.accent,
-    elevation: 12,
+    elevation: Platform.OS === "android" ? 0 : 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+  activeIconAndroid: {
+    zIndex: 1,
   },
 });
