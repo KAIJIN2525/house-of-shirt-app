@@ -238,6 +238,9 @@ const upsertShopifyOrder = async (
 };
 
 Deno.serve(async (req) => {
+  let deliveryClient: ReturnType<typeof createClient> | null = null;
+  let claimedWebhookId: string | null = null;
+
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: { "Access-Control-Allow-Origin": "*" },
@@ -267,8 +270,51 @@ Deno.serve(async (req) => {
     }
 
     const topic = req.headers.get("X-Shopify-Topic") ?? "";
+    const webhookId = req.headers.get("X-Shopify-Webhook-Id")?.trim() ?? "";
+    const eventId = req.headers.get("X-Shopify-Event-Id")?.trim() ?? "";
+    const shopDomain = req.headers.get("X-Shopify-Shop-Domain")?.trim() ?? "";
+    if (!webhookId || webhookId.length > 128) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid webhook delivery ID" }),
+        { status: 400 },
+      );
+    }
+
     const order = JSON.parse(rawBody);
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const { data: claimed, error: claimError } = await supabase.rpc(
+      "claim_shopify_webhook",
+      {
+        p_webhook_id: webhookId,
+        p_event_id: eventId,
+        p_topic: topic,
+        p_shop_domain: shopDomain,
+      },
+    );
+    if (claimError) throw claimError;
+    if (!claimed) {
+      return new Response(
+        JSON.stringify({ ok: true, duplicate: true, webhookId }),
+        { status: 200 },
+      );
+    }
+    deliveryClient = supabase;
+    claimedWebhookId = webhookId;
+
+    const successResponse = async (body: Record<string, unknown>) => {
+      const now = new Date().toISOString();
+      const { error: completionError } = await supabase
+        .from("shopify_webhook_deliveries")
+        .update({
+          status: "completed",
+          completed_at: now,
+          updated_at: now,
+          last_error: null,
+        })
+        .eq("webhook_id", webhookId);
+      if (completionError) throw completionError;
+      return new Response(JSON.stringify(body), { status: 200 });
+    };
 
     let syncedOrderName: string | null = null;
     if (topic.startsWith("orders/")) {
@@ -277,14 +323,14 @@ Deno.serve(async (req) => {
 
       // Updates/cancellations should keep Supabase fresh but must not resend blacklist alerts.
       if (topic !== "orders/create") {
-        return new Response(JSON.stringify({ ok: true, synced: true, order: syncedOrderName }), { status: 200 });
+        return await successResponse({ ok: true, synced: true, order: syncedOrderName });
       }
 
       const isAppOrder =
         String(order.tags ?? "").toLowerCase().includes("app-order") ||
         String(order.note ?? "").toLowerCase().includes("app order");
       if (isAppOrder) {
-        return new Response(JSON.stringify({ ok: true, synced: true, order: syncedOrderName, skippedDuplicateAppAlert: true }), { status: 200 });
+        return await successResponse({ ok: true, synced: true, order: syncedOrderName, skippedDuplicateAppAlert: true });
       }
     }
 
@@ -308,7 +354,7 @@ Deno.serve(async (req) => {
     });
 
     if (!blacklistRecord) {
-      return new Response(JSON.stringify({ ok: true, synced: Boolean(syncedOrderName), message: "Customer is not blacklisted" }), { status: 200 });
+      return await successResponse({ ok: true, synced: Boolean(syncedOrderName), message: "Customer is not blacklisted" });
     }
 
     // Fetch all admin users and their push tokens
@@ -319,7 +365,7 @@ Deno.serve(async (req) => {
 
     if (!admins?.length) {
       console.warn("Blacklisted customer ordered but no admins to notify");
-      return new Response(JSON.stringify({ ok: true, synced: Boolean(syncedOrderName), message: "No admins to notify" }), { status: 200 });
+      return await successResponse({ ok: true, synced: Boolean(syncedOrderName), message: "No admins to notify" });
     }
 
     const customerName =
@@ -370,12 +416,25 @@ Deno.serve(async (req) => {
 
     console.log(`Blacklist alert sent: ${customerEmail} placed ${orderName}`);
 
-    return new Response(
-      JSON.stringify({ ok: true, synced: Boolean(syncedOrderName), alerted: true, order: orderName, customer: customerEmail }),
-      { status: 200 },
-    );
+    return await successResponse({
+      ok: true,
+      synced: Boolean(syncedOrderName),
+      alerted: true,
+      order: orderName,
+      customer: customerEmail,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    if (deliveryClient && claimedWebhookId) {
+      await deliveryClient
+        .from("shopify_webhook_deliveries")
+        .update({
+          status: "failed",
+          last_error: message.slice(0, 1000),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("webhook_id", claimedWebhookId);
+    }
     console.error("Shopify webhook error:", message);
     return new Response(JSON.stringify({ error: message }), { status: 500 });
   }

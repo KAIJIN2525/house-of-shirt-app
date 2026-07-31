@@ -84,7 +84,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Webhook Edge Function with secret validation plus webhook history/detail UI.
 - [x] Shopify customer mirror and documented sync contract.
 - [ ] Configure production app credentials and webhook subscriptions.
-- [ ] Verify HMAC, replay protection, deduplication, ordering, and scheduled-job secrets.
+- [x] Verified webhook HMAC, persistent delivery replay protection/deduplication, and Vault-backed scheduled-job authentication.
+- [ ] Prevent stale or out-of-order Shopify webhook deliveries from regressing newer order state.
 - [ ] Add stale-data/failure alerting and load-test large catalogues/order histories.
 
 ## Admin and content management
