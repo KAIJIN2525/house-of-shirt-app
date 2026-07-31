@@ -26,7 +26,10 @@ const filterOptions: { id: RegistryFilter; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
-const getPageNumbers = (currentPage: number, totalPages: number): (number | "...")[] => {
+const getPageNumbers = (
+  currentPage: number,
+  totalPages: number,
+): (number | "...")[] => {
   if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
@@ -48,8 +51,8 @@ const getPageNumbers = (currentPage: number, totalPages: number): (number | "...
 
 export default function AdminCustomersScreen() {
   const router = useRouter();
-  const {  customers, fetchCustomers  } = useAdminCustomersStore();
-  const {  isDark  } = useThemeStore();
+  const { customers, fetchCustomers } = useAdminCustomersStore();
+  const { isDark } = useThemeStore();
   const [searchValue, setSearchValue] = useState("");
   const [activeFilter, setActiveFilter] = useState<RegistryFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +82,9 @@ export default function AdminCustomersScreen() {
 
     if (
       activeFilter === "recent-activity" &&
-      !["Just Now", "Oct 24, 2023", "Nov 12, 2023"].includes(customer.lastActivity)
+      !["Just Now", "Oct 24, 2023", "Nov 12, 2023"].includes(
+        customer.lastActivity,
+      )
     ) {
       return false;
     }
@@ -95,10 +100,13 @@ export default function AdminCustomersScreen() {
     );
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredCustomers.length / PAGE_SIZE),
+  );
   const paginatedCustomers = filteredCustomers.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    currentPage * PAGE_SIZE,
   );
 
   return (
@@ -109,7 +117,11 @@ export default function AdminCustomersScreen() {
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
           <Pressable onPress={() => router.navigate("/admin" as any)}>
-            <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#f8fafc" : "#111111"}
+            />
           </Pressable>
           <BrandLogo width={154} height={28} />
           <Pressable onPress={() => router.push("/admin" as any)}>
@@ -129,8 +141,8 @@ export default function AdminCustomersScreen() {
             Client{"\n"}Registry
           </Text>
           <Text className="mt-4 font-normal text-[14px] leading-6 text-neutral-400">
-            Manage your atelier&apos;s most valued patrons. Search through names,
-            emails, and transaction history with editorial precision.
+            Manage your atelier&apos;s most valued patrons. Search through
+            names, emails, and transaction history with editorial precision.
           </Text>
         </View>
 
@@ -184,9 +196,16 @@ export default function AdminCustomersScreen() {
                 className="bg-white px-5 py-5 dark:bg-[#101215]"
               >
                 <View className="flex-row gap-4">
-                  {(!customer.avatar || customer.avatar.includes("photo-1500648767791-00dcc994a43e")) ? (
+                  {!customer.avatar ||
+                  customer.avatar.includes(
+                    "photo-1500648767791-00dcc994a43e",
+                  ) ? (
                     <View className="h-16 w-12 bg-neutral-200 dark:bg-neutral-800 items-center justify-center border border-neutral-300 dark:border-neutral-700">
-                      <Ionicons name="person" size={28} color={isDark ? "#d4d4d4" : "#525252"} />
+                      <Ionicons
+                        name="person"
+                        size={28}
+                        color={isDark ? "#d4d4d4" : "#525252"}
+                      />
                     </View>
                   ) : (
                     <Image
@@ -206,7 +225,7 @@ export default function AdminCustomersScreen() {
                           {customer.email}
                         </Text>
                         <Text className="mt-1 font-normal text-[11px] tracking-[1.2px] text-neutral-300">
-                          {customer.phone}
+                          {customer.phone || "No phone on file"}
                         </Text>
                       </View>
 
@@ -223,7 +242,9 @@ export default function AdminCustomersScreen() {
                     <View className="mt-5 flex-row items-center">
                       <View
                         className={`px-3 py-1 ${
-                          customer.statusTone === "dark" ? "bg-black" : "bg-[#eef1f5]"
+                          customer.statusTone === "dark"
+                            ? "bg-black"
+                            : "bg-[#eef1f5]"
                         }`}
                       >
                         <Text
@@ -233,7 +254,9 @@ export default function AdminCustomersScreen() {
                               : "text-black"
                           }`}
                         >
-                          {customer.blacklisted ? "BLACKLISTED" : customer.badge}
+                          {customer.blacklisted
+                            ? "BLACKLISTED"
+                            : customer.badge}
                         </Text>
                       </View>
                     </View>
@@ -246,7 +269,8 @@ export default function AdminCustomersScreen() {
 
         <View className="mt-10 items-center px-6">
           <Text className="font-bold text-[10px] tracking-[1.6px] text-neutral-400">
-            SHOWING {filteredCustomers.length} OF {customers.length} CURATED PATRONS
+            SHOWING {filteredCustomers.length} OF {customers.length} CURATED
+            PATRONS
           </Text>
 
           <View className="mt-5 flex-row items-center gap-3">
@@ -261,7 +285,10 @@ export default function AdminCustomersScreen() {
 
             {getPageNumbers(currentPage, totalPages).map((page, index) =>
               page === "..." ? (
-                <Text key={`ellipsis-${index}`} className="font-bold text-[14px] text-neutral-400">
+                <Text
+                  key={`ellipsis-${index}`}
+                  className="font-bold text-[14px] text-neutral-400"
+                >
                   ...
                 </Text>
               ) : (
@@ -280,7 +307,7 @@ export default function AdminCustomersScreen() {
                     {page}
                   </Text>
                 </Pressable>
-              )
+              ),
             )}
 
             <Pressable

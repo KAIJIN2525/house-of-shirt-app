@@ -538,8 +538,8 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     let isAuthorized = false;
 
-    const testBypassSecret = Deno.env.get("TEST_BYPASS_TOKEN") ?? "TEST_BYPASS_TOKEN_SECRET";
-    if (testBypass && testBypass === testBypassSecret) {
+    const testBypassSecret = Deno.env.get("TEST_BYPASS_TOKEN")?.trim();
+    if (testBypass && testBypassSecret && testBypass === testBypassSecret) {
       isAuthorized = true;
     } else {
       if (!authHeader) {

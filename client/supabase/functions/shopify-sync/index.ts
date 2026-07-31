@@ -3,14 +3,15 @@ import { createClient } from "supabase";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-shopify-sync-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const SHOPIFY_API_VERSION = "2026-07";
 const SHOPIFY_PAGE_SIZE = 250;
 const RESEND_FROM_EMAIL =
-  Deno.env.get("RESEND_FROM_EMAIL") ?? "House of Shirts <onboarding@resend.dev>";
+  Deno.env.get("RESEND_FROM_EMAIL") ??
+  "House of Shirts <onboarding@resend.dev>";
 
 interface ShopifyImage {
   src?: string | null;
@@ -49,6 +50,7 @@ interface ShopifyCustomer {
     address1?: string | null;
     city?: string | null;
     country?: string | null;
+    phone?: string | null;
   };
 }
 
@@ -96,7 +98,6 @@ interface ShopifyOrdersResponse {
   orders?: ShopifyOrder[];
 }
 
-
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -114,6 +115,63 @@ const getEnv = (name: string) => {
   return value;
 };
 
+const secureEquals = async (left: string, right: string) => {
+  const encoder = new TextEncoder();
+  const [leftHash, rightHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(left)),
+    crypto.subtle.digest("SHA-256", encoder.encode(right)),
+  ]);
+  const leftBytes = new Uint8Array(leftHash);
+  const rightBytes = new Uint8Array(rightHash);
+  let difference = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    difference |= leftBytes[index] ^ rightBytes[index];
+  }
+  return difference === 0;
+};
+
+const authorizeSyncRequest = async (
+  req: Request,
+  supabaseUrl: string,
+  serviceRoleKey: string,
+) => {
+  const scheduledSecret = Deno.env.get("SHOPIFY_SYNC_SECRET")?.trim();
+  const requestSecret = req.headers.get("x-shopify-sync-secret")?.trim();
+  if (
+    scheduledSecret &&
+    requestSecret &&
+    (await secureEquals(requestSecret, scheduledSecret))
+  ) {
+    return null;
+  }
+
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!accessToken) {
+    return jsonResponse({ error: "Authentication required" }, 401);
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseAdmin.auth.getUser(accessToken);
+  if (userError || !user) {
+    return jsonResponse({ error: "Invalid or expired session" }, 401);
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profileError || !profile?.is_admin) {
+    return jsonResponse({ error: "Admins only" }, 403);
+  }
+
+  return null;
+};
+
 const toNumber = (value: string | null | undefined) => {
   if (!value) return 0;
   const parsed = Number(value);
@@ -128,8 +186,12 @@ const getAppOrderIdFromShopifyOrder = (order: ShopifyOrder) => {
 
 const isAppMirroredShopifyOrder = (order: ShopifyOrder) =>
   Boolean(getAppOrderIdFromShopifyOrder(order)) ||
-  String(order.tags ?? "").toLowerCase().includes("app-order") ||
-  String(order.note ?? "").toLowerCase().includes("app order");
+  String(order.tags ?? "")
+    .toLowerCase()
+    .includes("app-order") ||
+  String(order.note ?? "")
+    .toLowerCase()
+    .includes("app order");
 
 const getPrimaryImageUrl = (product: ShopifyProduct) =>
   product.image?.src ?? product.images?.[0]?.src ?? null;
@@ -292,7 +354,6 @@ const fetchAllOrders = async (
   return orders;
 };
 
-
 const dedupeProducts = (products: ShopifyProduct[]) => {
   const deduped = new Map<string, ShopifyProduct>();
 
@@ -334,9 +395,10 @@ const getProductOption = (product: ShopifyProduct, optionNames: string[]) => {
   const normalizedNames = optionNames.map((name) => name.toLowerCase());
   const options = Array.isArray(product.options) ? product.options : [];
 
-  return options.find((option: any) =>
-    typeof option?.name === "string" &&
-    normalizedNames.includes(option.name.toLowerCase())
+  return options.find(
+    (option: any) =>
+      typeof option?.name === "string" &&
+      normalizedNames.includes(option.name.toLowerCase()),
   ) as { name?: string; position?: number; values?: string[] } | undefined;
 };
 
@@ -357,8 +419,12 @@ const isRequestedSizeAvailable = (product: ShopifyProduct, size: string) => {
   const variants = Array.isArray(product.variants) ? product.variants : [];
 
   return variants.some((variant: any) => {
-    const variantSize = String(variant?.[`option${position}`] ?? "").toLowerCase();
-    return variantSize === size.toLowerCase() && getVariantInventory(variant) > 0;
+    const variantSize = String(
+      variant?.[`option${position}`] ?? "",
+    ).toLowerCase();
+    return (
+      variantSize === size.toLowerCase() && getVariantInventory(variant) > 0
+    );
   });
 };
 
@@ -445,7 +511,9 @@ const notifyBackInStockRequests = async (
   }
 
   let notifiedCount = 0;
-  const productMap = new Map(products.map((product) => [String(product.id), product]));
+  const productMap = new Map(
+    products.map((product) => [String(product.id), product]),
+  );
 
   for (const request of requests) {
     const product = productMap.get(String(request.product_id));
@@ -492,7 +560,6 @@ const notifyBackInStockRequests = async (
   return notifiedCount;
 };
 
-
 const upsertOrders = async (
   supabaseUrl: string,
   serviceRoleKey: string,
@@ -507,9 +574,13 @@ const upsertOrders = async (
     .from("profiles")
     .select("id, email");
 
-  const profileMap = new Map(profiles?.map((p: any) => [p.email.toLowerCase(), p.id]));
+  const profileMap = new Map(
+    profiles?.map((p: any) => [p.email.toLowerCase(), p.id]),
+  );
 
-  console.log(`Upserting ${orders.length} orders in chunks of ${CHUNK_SIZE}...`);
+  console.log(
+    `Upserting ${orders.length} orders in chunks of ${CHUNK_SIZE}...`,
+  );
 
   for (let i = 0; i < orders.length; i += CHUNK_SIZE) {
     const chunk = orders.slice(i, i + CHUNK_SIZE);
@@ -527,12 +598,14 @@ const upsertOrders = async (
 
         if (existingError) throw existingError;
         if (existing) {
-          const existingMetadata = existing.metadata && typeof existing.metadata === "object"
-            ? existing.metadata
-            : {};
+          const existingMetadata =
+            existing.metadata && typeof existing.metadata === "object"
+              ? existing.metadata
+              : {};
           const isDelivered = order.fulfillment_status === "fulfilled";
           const shipping = toNumber(
-            order.total_shipping_price_set?.shop_money?.amount ?? order.shipping_lines?.[0]?.price,
+            order.total_shipping_price_set?.shop_money?.amount ??
+              order.shipping_lines?.[0]?.price,
           );
 
           const { error: updateError } = await supabase
@@ -545,13 +618,18 @@ const upsertOrders = async (
               metadata: {
                 ...existingMetadata,
                 shopify_order_id: shopifyOrderId,
-                shopify_order_name: order.name || `#${order.order_number || order.id}`,
+                shopify_order_name:
+                  order.name || `#${order.order_number || order.id}`,
                 shopify_order_number: order.order_number,
                 financial_status: order.financial_status,
                 fulfillment_status: order.fulfillment_status,
                 shipping,
-                shipping_title: order.shipping_lines?.[0]?.title ?? existingMetadata.shipping_title ?? null,
-                shipping_lines: order.shipping_lines ?? existingMetadata.shipping_lines ?? [],
+                shipping_title:
+                  order.shipping_lines?.[0]?.title ??
+                  existingMetadata.shipping_title ??
+                  null,
+                shipping_lines:
+                  order.shipping_lines ?? existingMetadata.shipping_lines ?? [],
               },
             })
             .eq("id", appOrderId);
@@ -572,7 +650,8 @@ const upsertOrders = async (
     }
 
     const orderRows = regularOrders.map((order) => {
-      const email = order.email?.toLowerCase() || order.customer?.email?.toLowerCase();
+      const email =
+        order.email?.toLowerCase() || order.customer?.email?.toLowerCase();
       const userId = email ? profileMap.get(email) : null;
       const orderName = order.name || `#${order.order_number || order.id}`;
       const customerName = order.customer
@@ -580,7 +659,9 @@ const upsertOrders = async (
         : "";
       const lineItems = Array.isArray(order.line_items)
         ? order.line_items.map((item) => ({
-            id: String(item.id ?? item.variant_id ?? item.product_id ?? item.title),
+            id: String(
+              item.id ?? item.variant_id ?? item.product_id ?? item.title,
+            ),
             product_id: item.product_id ? String(item.product_id) : undefined,
             variant_id: item.variant_id ? String(item.variant_id) : undefined,
             name: item.title ?? item.name ?? "Shopify item",
@@ -594,7 +675,8 @@ const upsertOrders = async (
         : "";
       const paymentMethod = gateways || order.financial_status || "Shopify";
       const shipping = toNumber(
-        order.total_shipping_price_set?.shop_money?.amount ?? order.shipping_lines?.[0]?.price,
+        order.total_shipping_price_set?.shop_money?.amount ??
+          order.shipping_lines?.[0]?.price,
       );
       const isDelivered = order.fulfillment_status === "fulfilled";
 
@@ -603,7 +685,11 @@ const upsertOrders = async (
         shopify_order_id: String(order.id),
         user_id: userId,
         email: email || null,
-        customer_name: customerName || order.shipping_address?.name || order.billing_address?.name || "Guest",
+        customer_name:
+          customerName ||
+          order.shipping_address?.name ||
+          order.billing_address?.name ||
+          "Guest",
         title: `Order ${orderName}`,
         subtitle: lineItems[0]?.name ?? "Shopify order",
         total: toNumber(order.total_price),
@@ -623,7 +709,12 @@ const upsertOrders = async (
           financial_status: order.financial_status,
           fulfillment_status: order.fulfillment_status,
           payment_method: paymentMethod,
-          phone: order.phone || order.customer?.phone || order.shipping_address?.phone || order.billing_address?.phone || "",
+          phone:
+            order.phone ||
+            order.customer?.phone ||
+            order.shipping_address?.phone ||
+            order.billing_address?.phone ||
+            "",
           subtotal: toNumber(order.subtotal_price),
           shipping,
           shipping_title: order.shipping_lines?.[0]?.title ?? null,
@@ -639,7 +730,10 @@ const upsertOrders = async (
         .upsert(orderRows, { onConflict: "shopify_order_id" });
 
       if (error) {
-        console.error(`Error upserting order chunk ${i / CHUNK_SIZE}:`, error.message);
+        console.error(
+          `Error upserting order chunk ${i / CHUNK_SIZE}:`,
+          error.message,
+        );
         throw error;
       }
     }
@@ -647,7 +741,6 @@ const upsertOrders = async (
 
   return orders.length;
 };
-
 
 const upsertCustomers = async (
   supabaseUrl: string,
@@ -663,7 +756,9 @@ const upsertCustomers = async (
     .from("profiles")
     .select("id, email");
 
-  const profileMap = new Map(profiles?.map((p: any) => [p.email.toLowerCase(), p.id]));
+  const profileMap = new Map(
+    profiles?.map((p: any) => [p.email.toLowerCase(), p.id]),
+  );
   const profilesToUpdate = [];
 
   for (const customer of customers) {
@@ -672,7 +767,8 @@ const upsertCustomers = async (
     if (profileId) {
       profilesToUpdate.push({
         id: profileId,
-        full_name: `${customer.first_name || ""} ${customer.last_name || ""}`.trim(),
+        full_name:
+          `${customer.first_name || ""} ${customer.last_name || ""}`.trim(),
         phone: customer.phone || null,
         updated_at: now,
       });
@@ -695,24 +791,26 @@ const upsertCustomers = async (
       email: c.email.toLowerCase(),
       first_name: c.first_name || null,
       last_name: c.last_name || null,
-      phone: c.phone || null,
+      phone: c.phone || c.default_address?.phone || null,
       city: c.default_address?.city || null,
       country: c.default_address?.country || null,
       updated_at: now,
     }));
 
-  console.log(`Upserting ${customerRows.length} customers to shopify_customers...`);
+  console.log(
+    `Upserting ${customerRows.length} customers to shopify_customers...`,
+  );
   for (let i = 0; i < customerRows.length; i += CHUNK_SIZE) {
     const chunk = customerRows.slice(i, i + CHUNK_SIZE);
     const { error } = await supabase
       .from("shopify_customers")
       .upsert(chunk, { onConflict: "shopify_id" });
-    if (error) console.warn(`Error upserting shopify_customers chunk:`, error.message);
+    if (error)
+      console.warn(`Error upserting shopify_customers chunk:`, error.message);
   }
 
   return profilesToUpdate.length;
 };
-
 
 const upsertProducts = async (
   supabaseUrl: string,
@@ -725,11 +823,13 @@ const upsertProducts = async (
   const now = new Date().toISOString();
   const CHUNK_SIZE = 100;
 
-  console.log(`Upserting ${dedupedProducts.length} products in chunks of ${CHUNK_SIZE}...`);
+  console.log(
+    `Upserting ${dedupedProducts.length} products in chunks of ${CHUNK_SIZE}...`,
+  );
 
   for (let i = 0; i < dedupedProducts.length; i += CHUNK_SIZE) {
     const chunk = dedupedProducts.slice(i, i + CHUNK_SIZE);
-    
+
     const currentRows = chunk.map((product) => {
       const firstVariant = product.variants?.[0];
       const rawImages = Array.isArray(product.images) ? product.images : [];
@@ -775,14 +875,16 @@ const upsertProducts = async (
       const { error: error2 } = await supabase
         .from("products")
         .upsert(currentRows, { onConflict: "shopify_id" });
-      
-      if (error2) throw new Error(`Upsert failed for chunk starting at ${i}: ${error2.message}`);
+
+      if (error2)
+        throw new Error(
+          `Upsert failed for chunk starting at ${i}: ${error2.message}`,
+        );
     }
   }
 
   return "hybrid_chunked";
 };
-
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -791,10 +893,10 @@ Deno.serve(async (req) => {
 
   const path = getRequestPath(req);
   if (path === "status" && req.method === "GET") {
-    return jsonResponse({ 
-      status: "online", 
+    return jsonResponse({
+      status: "online",
       message: "Shopify sync service is healthy",
-      syncState: { syncingInRealtime: true } 
+      syncState: { syncingInRealtime: true },
     });
   }
 
@@ -802,11 +904,22 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: `Not found: ${path}` }, 404);
   }
 
+  if (req.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
   try {
-    const storeDomain = getEnv("SHOPIFY_STORE_DOMAIN");
-    const accessToken = getEnv("SHOPIFY_ACCESS_TOKEN");
     const supabaseUrl = getEnv("SUPABASE_URL");
     const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
+    const authorizationError = await authorizeSyncRequest(
+      req,
+      supabaseUrl,
+      serviceRoleKey,
+    );
+    if (authorizationError) return authorizationError;
+
+    const storeDomain = getEnv("SHOPIFY_STORE_DOMAIN");
+    const accessToken = getEnv("SHOPIFY_ACCESS_TOKEN");
 
     console.log(`Starting Full Shopify sync for ${storeDomain}`);
 
@@ -839,7 +952,12 @@ Deno.serve(async (req) => {
     // 2. Sync Products
     try {
       const products = await fetchAllProducts(storeDomain, accessToken);
-      productSchemaUsed = await upsertProducts(supabaseUrl, serviceRoleKey, products, salesTally);
+      productSchemaUsed = await upsertProducts(
+        supabaseUrl,
+        serviceRoleKey,
+        products,
+        salesTally,
+      );
       productsCount = products.length;
       logDetails.push(`${productsCount} products synced`);
 
@@ -854,7 +972,9 @@ Deno.serve(async (req) => {
         }
       } catch (notifyError) {
         const message =
-          notifyError instanceof Error ? notifyError.message : "Unknown restock notification error";
+          notifyError instanceof Error
+            ? notifyError.message
+            : "Unknown restock notification error";
         console.warn("Back-in-stock notification check failed:", message);
         logDetails.push(`Restock notifications failed: ${message}`);
       }
@@ -866,7 +986,11 @@ Deno.serve(async (req) => {
     // 3. Sync Customers
     try {
       const customers = await fetchAllCustomers(storeDomain, accessToken);
-      customersCount = await upsertCustomers(supabaseUrl, serviceRoleKey, customers);
+      customersCount = await upsertCustomers(
+        supabaseUrl,
+        serviceRoleKey,
+        customers,
+      );
       logDetails.push(`${customersCount} customers updated`);
     } catch (e) {
       console.warn("Customer sync failed:", e.message);
@@ -892,7 +1016,7 @@ Deno.serve(async (req) => {
       productsCount,
       customersCount,
       ordersCount,
-      `Sync result: ${summary}`
+      `Sync result: ${summary}`,
     );
 
     console.log(`Sync complete: ${summary}`);
@@ -908,9 +1032,9 @@ Deno.serve(async (req) => {
       message: `Sync finished. ${summary}. Check sync logs for details.`,
       timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown sync error";
+    const message =
+      error instanceof Error ? error.message : "Unknown sync error";
     console.error("Shopify sync failed:", message);
     return jsonResponse({ error: message }, 400);
   }

@@ -4,14 +4,23 @@ import { useAdminCustomersStore } from "@/stores/adminCustomersStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Image, Modal, Pressable, ScrollView, TextInput, View } from "react-native";
+import {
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { AppText as Text } from "@/components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 import { useThemeStore } from "@/stores/themeStore";
 import * as ImagePicker from "expo-image-picker";
 
-const formatOrderReference = (id: string) => id.startsWith("#") ? id : `#${id}`;
+const formatOrderReference = (id: string) =>
+  id.startsWith("#") ? id : `#${id}`;
 
 const statusColors = {
   Fulfilled: "text-[#4aa972]",
@@ -28,8 +37,15 @@ const logIcons = {
 export default function AdminCustomerProfileScreen() {
   const router = useRouter();
   const { customerId } = useLocalSearchParams<{ customerId?: string }>();
-  const {  getCustomerById, addVipNote, toggleBlacklist, markCustomerContacted, fetchCustomers, updateCustomerAvatar  } = useAdminCustomersStore();
-  const {  isDark  } = useThemeStore();
+  const {
+    getCustomerById,
+    addVipNote,
+    toggleBlacklist,
+    markCustomerContacted,
+    fetchCustomers,
+    updateCustomerAvatar,
+  } = useAdminCustomersStore();
+  const { isDark } = useThemeStore();
 
   const [isVipNoteOpen, setIsVipNoteOpen] = useState(false);
   const [vipNote, setVipNote] = useState("");
@@ -55,7 +71,7 @@ export default function AdminCustomerProfileScreen() {
         value: customer?.preferredCategories.join(", ") ?? "Unassigned",
       },
     ],
-    [customer]
+    [customer],
   );
 
   if (!customer) {
@@ -71,8 +87,11 @@ export default function AdminCustomerProfileScreen() {
   }
 
   const handleSendMessage = async () => {
-    await markCustomerContacted(customer.id, `Opened concierge outreach thread for ${customer.name}.`);
-    
+    await markCustomerContacted(
+      customer.id,
+      `Opened concierge outreach thread for ${customer.name}.`,
+    );
+
     if (customer.phone) {
       const numericPhone = customer.phone.replace(/[^0-9]/g, "");
       // If it starts with 0, you might need country code, but let's just use it as is
@@ -138,7 +157,7 @@ export default function AdminCustomerProfileScreen() {
         updateCustomerAvatar(customer.id, result.assets[0].uri);
         Alert.alert(
           "Photo Saved Locally",
-          "We saved the photo to this device, but we couldn't upload it to your Supabase 'assets' storage bucket. Please ensure the bucket exists and is public in Supabase."
+          "We saved the photo to this device, but we couldn't upload it to your Supabase 'assets' storage bucket. Please ensure the bucket exists and is public in Supabase.",
         );
       } finally {
         setIsUploading(false);
@@ -157,7 +176,11 @@ export default function AdminCustomerProfileScreen() {
             onPress={() => router.navigate("/admin/customers" as any)}
             className="flex-row items-center gap-2 self-start"
           >
-            <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#f8fafc" : "#111111"}
+            />
             <Text className="font-bold text-[11px] tracking-[2px] text-black dark:text-white">
               BACK TO CUSTOMERS
             </Text>
@@ -170,9 +193,14 @@ export default function AdminCustomerProfileScreen() {
               onPress={handleUpdateAvatar}
               className="relative overflow-hidden"
             >
-              {(!customer.avatar || customer.avatar.includes("photo-1500648767791-00dcc994a43e")) ? (
+              {!customer.avatar ||
+              customer.avatar.includes("photo-1500648767791-00dcc994a43e") ? (
                 <View className="h-28 w-20 bg-neutral-200 dark:bg-neutral-800 items-center justify-center border border-neutral-300 dark:border-neutral-700">
-                  <Ionicons name="person" size={38} color={isDark ? "#d4d4d4" : "#525252"} />
+                  <Ionicons
+                    name="person"
+                    size={38}
+                    color={isDark ? "#d4d4d4" : "#525252"}
+                  />
                   <View className="absolute inset-x-0 bottom-0 bg-black/40 py-1 items-center">
                     <Ionicons name="camera" size={12} color="white" />
                   </View>
@@ -199,11 +227,18 @@ export default function AdminCustomerProfileScreen() {
               </Text>
 
               <View className="mt-4 flex-row items-start justify-between gap-4">
-                <Text className="flex-1 font-normal text-[14px] leading-6 text-[#44618e]">
-                  {customer.email}
-                </Text>
+                <View className="flex-1">
+                  <Text className="font-normal text-[14px] leading-6 text-[#44618e]">
+                    {customer.email}
+                  </Text>
+                  <Text className="mt-1 font-normal text-[12px] text-neutral-400">
+                    {customer.phone || "No phone on file"}
+                  </Text>
+                </View>
                 <Text className="font-normal text-[11px] tracking-[1.8px] text-[#5a6b86]">
-                  {customer.shopifySynced ? "SHOPIFY\nSYNCED" : "MANUAL\nPROFILE"}
+                  {customer.shopifySynced
+                    ? "SHOPIFY\nSYNCED"
+                    : "MANUAL\nPROFILE"}
                 </Text>
               </View>
             </View>
@@ -299,7 +334,10 @@ export default function AdminCustomerProfileScreen() {
 
             <View className="mt-6 gap-5">
               {analytics.map((item) => (
-                <View key={item.label} className="border-b border-[#eef1f4] pb-4">
+                <View
+                  key={item.label}
+                  className="border-b border-[#eef1f4] pb-4"
+                >
                   <Text className="font-normal text-[12px] tracking-[1.2px] text-[#70819b]">
                     {item.label.toUpperCase()}
                   </Text>
@@ -382,7 +420,9 @@ export default function AdminCustomerProfileScreen() {
                 <View key={log.id} className="flex-row gap-4">
                   <View className="mt-1 h-8 w-8 items-center justify-center rounded-full border border-[#dde2e8] bg-white">
                     <Ionicons
-                      name={logIcons[log.type] as keyof typeof Ionicons.glyphMap}
+                      name={
+                        logIcons[log.type] as keyof typeof Ionicons.glyphMap
+                      }
                       size={14}
                       color="#111111"
                     />

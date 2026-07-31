@@ -5,11 +5,13 @@ import { useToastStore } from "@/stores/toastStore";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   Linking,
   Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   TextInput,
@@ -19,8 +21,10 @@ import { AppText as Text } from "@/components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 import { BrandLogo } from "@/components/BrandLogo";
+import { HouseLoader } from "@/components/loading/HouseLoader";
 
-const formatOrderReference = (id: string) => id.startsWith("#") ? id : `#${id}`;
+const formatOrderReference = (id: string) =>
+  id.startsWith("#") ? id : `#${id}`;
 
 const FILTER_TABS = [
   { key: "all", label: "ALL ORDERS" },
@@ -68,9 +72,9 @@ const formatDateLabel = (value: Date) =>
 
 export default function AdminOrdersScreen() {
   const router = useRouter();
-  const {  isDark  } = useThemeStore();
+  const { isDark } = useThemeStore();
   const showToast = useToastStore((state) => state.showToast);
-  const { 
+  const {
     orders,
     arrivalAttentionOrders,
     fetchOrders,
@@ -79,7 +83,7 @@ export default function AdminOrdersScreen() {
     updateOrderLogisticsStatus,
     bulkDispatchOrders,
     dispatchExternalOrder,
-   } = useOrdersStore();
+  } = useOrdersStore();
   const [activeTab, setActiveTab] =
     useState<(typeof FILTER_TABS)[number]["key"]>("all");
   const [searchValue, setSearchValue] = useState("");
@@ -89,10 +93,15 @@ export default function AdminOrdersScreen() {
   const [showToPicker, setShowToPicker] = useState(false);
   const [visibleCount, setVisibleCount] = useState(4);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [navigatingOrderId, setNavigatingOrderId] = useState<string | null>(
+    null,
+  );
 
   // Bulk & External Dispatch State
   const [selectMode, setSelectMode] = useState(false);
-  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [externalModalVisible, setExternalModalVisible] = useState(false);
   const [extName, setExtName] = useState("");
   const [extPhone, setExtPhone] = useState("");
@@ -100,19 +109,47 @@ export default function AdminOrdersScreen() {
   const [extTitle, setExtTitle] = useState("");
   const [isDispatching, setIsDispatching] = useState(false);
 
-  const summarizeChannels = (report: { channels: { email: string; sms: string; push: string; app: string; admin: string } }) =>
+  const summarizeChannels = (report: {
+    channels: {
+      email: string;
+      sms: string;
+      push: string;
+      app: string;
+      admin: string;
+    };
+  }) =>
     [
-      report.channels.email === "sent" ? "email" : report.channels.email === "failed" ? "email failed" : null,
-      report.channels.push === "sent" ? "push" : report.channels.push === "failed" ? "push failed" : null,
-      report.channels.app === "sent" ? "in-app" : report.channels.app === "failed" ? "in-app failed" : null,
-      report.channels.admin === "sent" ? "admin" : report.channels.admin === "failed" ? "admin failed" : null,
-      report.channels.sms === "sent" ? "sms" : report.channels.sms === "failed" ? "sms failed" : null,
+      report.channels.email === "sent"
+        ? "email"
+        : report.channels.email === "failed"
+          ? "email failed"
+          : null,
+      report.channels.push === "sent"
+        ? "push"
+        : report.channels.push === "failed"
+          ? "push failed"
+          : null,
+      report.channels.app === "sent"
+        ? "in-app"
+        : report.channels.app === "failed"
+          ? "in-app failed"
+          : null,
+      report.channels.admin === "sent"
+        ? "admin"
+        : report.channels.admin === "failed"
+          ? "admin failed"
+          : null,
+      report.channels.sms === "sent"
+        ? "sms"
+        : report.channels.sms === "failed"
+          ? "sms failed"
+          : null,
     ]
       .filter(Boolean)
       .join(", ");
 
   const toggleSelectOrder = (id: string) => {
-    setSelectedOrderIds(prev => {
+    setSelectedOrderIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -154,10 +191,13 @@ export default function AdminOrdersScreen() {
       customerName: extName,
       customerPhone: extPhone,
       customerEmail: extEmail,
-      orderTitle: extTitle
+      orderTitle: extTitle,
     });
     setExternalModalVisible(false);
-    setExtName(""); setExtPhone(""); setExtEmail(""); setExtTitle("");
+    setExtName("");
+    setExtPhone("");
+    setExtEmail("");
+    setExtTitle("");
     setIsDispatching(false);
 
     if (reports.length > 0) {
@@ -179,17 +219,17 @@ export default function AdminOrdersScreen() {
         .length,
       "follow-up": arrivalAttentionOrders.length,
     }),
-    [arrivalAttentionOrders.length, orders]
+    [arrivalAttentionOrders.length, orders],
   );
 
   const hasActiveRefinements = Boolean(
-    searchValue.trim() || fromDate || toDate
+    searchValue.trim() || fromDate || toDate,
   );
 
   const filteredOrders = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
     const arrivalAttentionIds = new Set(
-      arrivalAttentionOrders.map((alertOrder) => alertOrder.id)
+      arrivalAttentionOrders.map((alertOrder) => alertOrder.id),
     );
 
     return orders.filter((order) => {
@@ -197,10 +237,7 @@ export default function AdminOrdersScreen() {
         return false;
       }
 
-      if (
-        activeTab === "follow-up" &&
-        !arrivalAttentionIds.has(order.id)
-      ) {
+      if (activeTab === "follow-up" && !arrivalAttentionIds.has(order.id)) {
         return false;
       }
 
@@ -222,7 +259,14 @@ export default function AdminOrdersScreen() {
 
       return true;
     });
-  }, [activeTab, arrivalAttentionOrders, fromDate, orders, searchValue, toDate]);
+  }, [
+    activeTab,
+    arrivalAttentionOrders,
+    fromDate,
+    orders,
+    searchValue,
+    toDate,
+  ]);
 
   const clearRefinements = () => {
     setSearchValue("");
@@ -231,18 +275,57 @@ export default function AdminOrdersScreen() {
     setVisibleCount(4);
   };
 
-  const visibleOrders = filteredOrders.slice(0, visibleCount);
-  const safeUpper = (value?: string) => (value ?? "UNKNOWN").toUpperCase();
-const isFallbackOrderImage = (image?: string) =>
-  !image ||
-  image.includes("images.unsplash.com/photo-1595777457583") ||
-  image.includes("images.unsplash.com/photo-1521572163474") ||
-  image.includes("images.unsplash.com/photo-1603252109303");
+  const openOrderDetails = useCallback(
+    (orderId: string) => {
+      setNavigatingOrderId(orderId);
+      requestAnimationFrame(() => {
+        router.push({
+          pathname: "/admin/orders/[id]",
+          params: { id: orderId },
+        } as any);
+      });
+    },
+    [router],
+  );
 
+  useEffect(() => {
+    if (!navigatingOrderId) return;
+    const timer = setTimeout(() => setNavigatingOrderId(null), 2000);
+    return () => clearTimeout(timer);
+  }, [navigatingOrderId]);
+
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
+
+  useEffect(() => {
+    setVisibleCount(4);
+  }, [activeTab, fromDate, searchValue, toDate]);
+
+  const handleOrdersScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - (contentOffset.y + layoutMeasurement.height);
+
+      if (distanceFromBottom <= 240) {
+        setVisibleCount((count) => Math.min(count + 4, filteredOrders.length));
+      }
+    },
+    [filteredOrders.length],
+  );
+  const safeUpper = (value?: string) => (value ?? "UNKNOWN").toUpperCase();
+  const isFallbackOrderImage = (image?: string) =>
+    !image ||
+    image.includes("images.unsplash.com/photo-1595777457583") ||
+    image.includes("images.unsplash.com/photo-1521572163474") ||
+    image.includes("images.unsplash.com/photo-1603252109303");
 
   const handleExportManifest = async () => {
     if (filteredOrders.length === 0) {
-      showToast({ type: "error", message: "No orders to export for the current filters." });
+      showToast({
+        type: "error",
+        message: "No orders to export for the current filters.",
+      });
       return;
     }
 
@@ -263,29 +346,47 @@ const isFallbackOrderImage = (image?: string) =>
         .map((row) => row.map((cell) => escapeCsv(String(cell))).join(","))
         .join("\n");
 
-      const file = new FileSystem.File(FileSystem.Paths.cache, `order_manifest_${Date.now()}.csv`);
+      const file = new FileSystem.File(
+        FileSystem.Paths.cache,
+        `order_manifest_${Date.now()}.csv`,
+      );
       file.create({ overwrite: true });
       file.write(csv);
 
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(file.uri, { mimeType: "text/csv", dialogTitle: "Export Order Manifest" });
+        await Sharing.shareAsync(file.uri, {
+          mimeType: "text/csv",
+          dialogTitle: "Export Order Manifest",
+        });
       } else {
         showToast({ type: "success", message: `Manifest saved: ${file.name}` });
       }
     } catch (error) {
       console.error("Error exporting manifest:", error);
-      showToast({ type: "error", message: "Could not export the order manifest." });
+      showToast({
+        type: "error",
+        message: "Could not export the order manifest.",
+      });
     }
   };
   const selectedOrder = orders.find((order) => order.id === selectedOrderId);
-  const sanitizedPhone = (value?: string) => (value ?? "").replace(/[^\d+]/g, "");
-  const openChat = (orderId: string, orderStatus: string, customerName: string) => {
-    const order = orders.find(o => o.id === orderId);
+  const sanitizedPhone = (value?: string) =>
+    (value ?? "").replace(/[^\d+]/g, "");
+  const openChat = (
+    orderId: string,
+    orderStatus: string,
+    customerName: string,
+  ) => {
+    const order = orders.find((o) => o.id === orderId);
     if (order?.customerPhone) {
       const phone = sanitizedPhone(order.customerPhone).replace(/^\+/, "");
-      Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`Hi ${customerName}, following up on your order ${orderId}.`)}`);
+      Linking.openURL(
+        `https://wa.me/${phone}?text=${encodeURIComponent(`Hi ${customerName}, following up on your order ${orderId}.`)}`,
+      );
     } else {
-      Linking.openURL(`mailto:support@houseofshirts.com?subject=Order Follow-up: ${orderId}`);
+      Linking.openURL(
+        `mailto:support@houseofshirts.com?subject=Order Follow-up: ${orderId}`,
+      );
     }
   };
 
@@ -293,11 +394,17 @@ const isFallbackOrderImage = (image?: string) =>
     <SafeAreaView className="flex-1 bg-[#f3f4f6] dark:bg-[#050505]">
       <ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={handleOrdersScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
           <Pressable onPress={() => router.navigate("/admin" as any)}>
-            <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#f8fafc" : "#111111"}
+            />
           </Pressable>
 
           <BrandLogo width={154} height={28} />
@@ -335,19 +442,25 @@ const isFallbackOrderImage = (image?: string) =>
                 >
                   <Text
                     className={`font-bold text-[10px] tracking-[1.4px] ${
-                      isActive ? "text-black dark:text-white" : "text-neutral-400"
+                      isActive
+                        ? "text-black dark:text-white"
+                        : "text-neutral-400"
                     }`}
                   >
                     {tab.label}
                   </Text>
                   <View
                     className={`h-5 min-w-[20px] items-center justify-center rounded-full px-1 ${
-                      isActive ? "bg-[#25314b]" : "bg-[#eceff3] dark:bg-white/10"
+                      isActive
+                        ? "bg-[#25314b]"
+                        : "bg-[#eceff3] dark:bg-white/10"
                     }`}
                   >
                     <Text
                       className={`font-bold text-[9px] ${
-                        isActive ? "text-white" : "text-neutral-500 dark:text-white/60"
+                        isActive
+                          ? "text-white"
+                          : "text-neutral-500 dark:text-white/60"
                       }`}
                     >
                       {counts[tab.key]}
@@ -433,7 +546,9 @@ const isFallbackOrderImage = (image?: string) =>
             }}
             className={`px-4 py-3 border ${selectMode ? "bg-black border-black dark:bg-white dark:border-white" : "border-gray-300 dark:border-white/20"}`}
           >
-            <Text className={`font-bold text-[10px] tracking-[1.5px] ${selectMode ? "text-white dark:text-black" : "text-black dark:text-white"}`}>
+            <Text
+              className={`font-bold text-[10px] tracking-[1.5px] ${selectMode ? "text-white dark:text-black" : "text-black dark:text-white"}`}
+            >
               {selectMode ? "CANCEL SELECTION" : "BULK DISPATCH"}
             </Text>
           </Pressable>
@@ -445,7 +560,10 @@ const isFallbackOrderImage = (image?: string) =>
               + MANUAL ORDER
             </Text>
           </Pressable>
-          <Pressable onPress={() => void handleExportManifest()} className="bg-black px-6 py-3">
+          <Pressable
+            onPress={() => void handleExportManifest()}
+            className="bg-black px-6 py-3"
+          >
             <Text className="font-bold text-[10px] tracking-[1.5px] text-white">
               EXPORT MANIFEST
             </Text>
@@ -460,8 +578,8 @@ const isFallbackOrderImage = (image?: string) =>
               </Text>
               <Text className="mt-2 font-normal text-[13px] leading-6 text-neutral-600">
                 {arrivalAttentionOrders.length} GIGL pay-on-delivery order
-                {arrivalAttentionOrders.length === 1 ? "" : "s"} need availability
-                outreach before pickup or doorstep delivery.
+                {arrivalAttentionOrders.length === 1 ? "" : "s"} need
+                availability outreach before pickup or doorstep delivery.
               </Text>
             </View>
           </View>
@@ -474,16 +592,28 @@ const isFallbackOrderImage = (image?: string) =>
                 stageColors[order.atelierStage] ?? stageColors.Pending;
 
               return (
-                <Pressable 
-                  key={order.id} 
-                  onPress={() => selectMode ? toggleSelectOrder(order.id) : router.push(`/admin/orders/${order.id}` as any)}
+                <Pressable
+                  key={order.id}
+                  onPress={() =>
+                    selectMode
+                      ? toggleSelectOrder(order.id)
+                      : openOrderDetails(order.id)
+                  }
                   className={`bg-white px-5 py-5 dark:bg-[#101215] ${selectMode && selectedOrderIds.has(order.id) ? "border-2 border-black dark:border-white" : ""}`}
                 >
                   <View className="flex-row items-start justify-between">
                     <View className="flex-row items-center gap-2">
                       {selectMode && (
-                        <View className={`w-4 h-4 rounded-full border ${selectedOrderIds.has(order.id) ? "bg-black border-black dark:bg-white dark:border-white" : "border-gray-300 dark:border-gray-600"} items-center justify-center`}>
-                          {selectedOrderIds.has(order.id) && <Ionicons name="checkmark" size={10} color={isDark ? "black" : "white"} />}
+                        <View
+                          className={`w-4 h-4 rounded-full border ${selectedOrderIds.has(order.id) ? "bg-black border-black dark:bg-white dark:border-white" : "border-gray-300 dark:border-gray-600"} items-center justify-center`}
+                        >
+                          {selectedOrderIds.has(order.id) && (
+                            <Ionicons
+                              name="checkmark"
+                              size={10}
+                              color={isDark ? "black" : "white"}
+                            />
+                          )}
                         </View>
                       )}
                       <Text className="font-bold text-[10px] tracking-[1.3px] text-neutral-400">
@@ -506,7 +636,11 @@ const isFallbackOrderImage = (image?: string) =>
                   <View className="mt-5 flex-row gap-4">
                     {isFallbackOrderImage(order.image) ? (
                       <View className="h-20 w-16 items-center justify-center bg-[#f1f2f4] dark:bg-[#0b0d10] border border-black/5 dark:border-white/10">
-                        <Ionicons name="receipt-outline" size={28} color={isDark ? "#f8fafc" : "#111111"} />
+                        <Ionicons
+                          name="receipt-outline"
+                          size={28}
+                          color={isDark ? "#f8fafc" : "#111111"}
+                        />
                       </View>
                     ) : (
                       <Image
@@ -562,14 +696,17 @@ const isFallbackOrderImage = (image?: string) =>
                     </View>
                   </View>
 
-                  {arrivalAttentionOrders.some((alertOrder) => alertOrder.id === order.id) ? (
+                  {arrivalAttentionOrders.some(
+                    (alertOrder) => alertOrder.id === order.id,
+                  ) ? (
                     <View className="mt-4 rounded-[20px] bg-[#fbf7ef] px-4 py-4">
                       <Text className="font-bold text-[10px] tracking-[1.3px] text-[#b45309]">
                         CUSTOMER AVAILABILITY ALERT
                       </Text>
                       <Text className="mt-2 font-normal text-[12px] leading-5 text-neutral-600">
-                        This GIGL pay-on-delivery order has reached {order.status.toLowerCase()}.
-                        Reach the customer now so the package is not left unclaimed.
+                        This GIGL pay-on-delivery order has reached{" "}
+                        {order.status.toLowerCase()}. Reach the customer now so
+                        the package is not left unclaimed.
                       </Text>
                       <View className="mt-4 flex-row flex-wrap gap-2">
                         <Pressable
@@ -584,7 +721,13 @@ const isFallbackOrderImage = (image?: string) =>
                       <View className="mt-3 flex-row items-center justify-between">
                         <View className="flex-row items-center gap-4">
                           <Pressable
-                            onPress={() => openChat(order.id, order.status, order.customerName)}
+                            onPress={() =>
+                              openChat(
+                                order.id,
+                                order.status,
+                                order.customerName,
+                              )
+                            }
                           >
                             <Text className="font-bold text-[10px] tracking-[1.4px] text-[#161c28]">
                               CHAT
@@ -593,7 +736,9 @@ const isFallbackOrderImage = (image?: string) =>
                           {order.customerPhone ? (
                             <Pressable
                               onPress={() =>
-                                Linking.openURL(`tel:${sanitizedPhone(order.customerPhone)}`).catch(() => {})
+                                Linking.openURL(
+                                  `tel:${sanitizedPhone(order.customerPhone)}`,
+                                ).catch(() => {})
                               }
                             >
                               <Text className="font-bold text-[10px] tracking-[1.4px] text-[#161c28]">
@@ -604,7 +749,9 @@ const isFallbackOrderImage = (image?: string) =>
                           {order.customerPhone ? (
                             <Pressable
                               onPress={() =>
-                                Linking.openURL(`sms:${sanitizedPhone(order.customerPhone)}`).catch(() => {})
+                                Linking.openURL(
+                                  `sms:${sanitizedPhone(order.customerPhone)}`,
+                                ).catch(() => {})
                               }
                             >
                               <Text className="font-bold text-[10px] tracking-[1.4px] text-[#161c28]">
@@ -615,7 +762,9 @@ const isFallbackOrderImage = (image?: string) =>
                           {order.customerPhone ? (
                             <Pressable
                               onPress={() =>
-                                Linking.openURL(`https://wa.me/${sanitizedPhone(order.customerPhone).replace(/^\+/, "")}`).catch(() => {})
+                                Linking.openURL(
+                                  `https://wa.me/${sanitizedPhone(order.customerPhone).replace(/^\+/, "")}`,
+                                ).catch(() => {})
                               }
                             >
                               <Text className="font-bold text-[10px] tracking-[1.4px] text-[#161c28]">
@@ -630,7 +779,7 @@ const isFallbackOrderImage = (image?: string) =>
                               onPress={() =>
                                 void acknowledgeArrivalAlert(
                                   order.id,
-                                  `Admin marked follow-up contacted for ${order.status.toLowerCase()} order via ${order.carrier}.`
+                                  `Admin marked follow-up contacted for ${order.status.toLowerCase()} order via ${order.carrier}.`,
                                 )
                               }
                             >
@@ -644,7 +793,7 @@ const isFallbackOrderImage = (image?: string) =>
                               onPress={() =>
                                 void resolveArrivalAlert(
                                   order.id,
-                                  `Admin resolved alert after confirming customer pickup/payment for ${order.id}.`
+                                  `Admin resolved alert after confirming customer pickup/payment for ${order.id}.`,
                                 )
                               }
                             >
@@ -668,7 +817,8 @@ const isFallbackOrderImage = (image?: string) =>
                         BLACKLIST RISK ALERT
                       </Text>
                       <Text className="mt-2 font-normal text-[12px] leading-5 text-neutral-600">
-                        {order.customerRiskReason || "This customer is restricted and the order should remain under manual review."}
+                        {order.customerRiskReason ||
+                          "This customer is restricted and the order should remain under manual review."}
                       </Text>
                       <Pressable
                         onPress={() => router.push("/admin/blacklist" as any)}
@@ -683,7 +833,10 @@ const isFallbackOrderImage = (image?: string) =>
 
                   <View className="mt-5 flex-row items-center justify-end">
                     <Pressable
-                      onPress={() => router.push(`/admin/orders/${order.id}` as any)}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        openOrderDetails(order.id);
+                      }}
                     >
                       <Text className="font-bold text-[10px] tracking-[1.5px] text-neutral-700">
                         {stageConfig.action}
@@ -700,14 +853,6 @@ const isFallbackOrderImage = (image?: string) =>
           <Text className="font-bold text-[28px] leading-none text-neutral-400">
             ...
           </Text>
-          <Pressable
-            onPress={() => setVisibleCount((count) => count + 4)}
-            className="mt-4"
-          >
-            <Text className="font-bold text-[11px] tracking-[1.9px] text-neutral-500">
-              LOAD MORE ORDERS
-            </Text>
-          </Pressable>
           <Text className="mt-2 font-normal text-[11px] text-neutral-400">
             Displaying {visibleOrders.length} of {filteredOrders.length} active
             orders
@@ -715,22 +860,70 @@ const isFallbackOrderImage = (image?: string) =>
         </View>
       </ScrollView>
 
+      <Modal
+        visible={Boolean(navigatingOrderId)}
+        transparent
+        animationType="fade"
+      >
+        <View className="flex-1 items-center justify-center bg-black/35 px-8">
+          <View className="w-full max-w-sm rounded-[28px] bg-white dark:bg-[#101215]">
+            <HouseLoader label="OPENING ORDER" />
+          </View>
+        </View>
+      </Modal>
+
       {/* External Order Modal */}
       <Modal visible={externalModalVisible} transparent animationType="slide">
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white dark:bg-[#101215] p-6 rounded-t-[24px]">
-            <Text className="font-bold text-xl mb-4 dark:text-white">Quick Dispatch External Order</Text>
-            <TextInput value={extName} onChangeText={setExtName} placeholder="Customer Name (Required)" className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white" placeholderTextColor="#9ca3af" />
-            <TextInput value={extPhone} onChangeText={setExtPhone} placeholder="Phone Number (Required for SMS)" keyboardType="phone-pad" className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white" placeholderTextColor="#9ca3af" />
-            <TextInput value={extEmail} onChangeText={setExtEmail} placeholder="Email (Optional)" keyboardType="email-address" className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white" placeholderTextColor="#9ca3af" />
-            <TextInput value={extTitle} onChangeText={setExtTitle} placeholder="Order Title/Description (Required)" className="bg-gray-100 dark:bg-white/10 p-4 mb-5 rounded-xl dark:text-white" placeholderTextColor="#9ca3af" />
-            
+            <Text className="font-bold text-xl mb-4 dark:text-white">
+              Quick Dispatch External Order
+            </Text>
+            <TextInput
+              value={extName}
+              onChangeText={setExtName}
+              placeholder="Customer Name (Required)"
+              className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white"
+              placeholderTextColor="#9ca3af"
+            />
+            <TextInput
+              value={extPhone}
+              onChangeText={setExtPhone}
+              placeholder="Phone Number (Required for SMS)"
+              keyboardType="phone-pad"
+              className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white"
+              placeholderTextColor="#9ca3af"
+            />
+            <TextInput
+              value={extEmail}
+              onChangeText={setExtEmail}
+              placeholder="Email (Optional)"
+              keyboardType="email-address"
+              className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white"
+              placeholderTextColor="#9ca3af"
+            />
+            <TextInput
+              value={extTitle}
+              onChangeText={setExtTitle}
+              placeholder="Order Title/Description (Required)"
+              className="bg-gray-100 dark:bg-white/10 p-4 mb-5 rounded-xl dark:text-white"
+              placeholderTextColor="#9ca3af"
+            />
+
             <View className="flex-row gap-3">
-              <Pressable onPress={() => setExternalModalVisible(false)} className="flex-1 p-4 items-center bg-gray-200 dark:bg-white/10 rounded-xl">
+              <Pressable
+                onPress={() => setExternalModalVisible(false)}
+                className="flex-1 p-4 items-center bg-gray-200 dark:bg-white/10 rounded-xl"
+              >
                 <Text className="font-bold dark:text-white">Cancel</Text>
               </Pressable>
-              <Pressable onPress={handleExternalDispatch} className="flex-1 p-4 items-center bg-black dark:bg-white rounded-xl">
-                <Text className="font-bold text-white dark:text-black">{isDispatching ? "Dispatching..." : "Dispatch & Notify"}</Text>
+              <Pressable
+                onPress={handleExternalDispatch}
+                className="flex-1 p-4 items-center bg-black dark:bg-white rounded-xl"
+              >
+                <Text className="font-bold text-white dark:text-black">
+                  {isDispatching ? "Dispatching..." : "Dispatch & Notify"}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -740,13 +933,15 @@ const isFallbackOrderImage = (image?: string) =>
       {/* Fixed Action Bar for Bulk Dispatch */}
       {selectMode && selectedOrderIds.size > 0 && (
         <View className="absolute bottom-[90px] left-0 right-0 p-6 bg-white dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-white/10 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
-          <Pressable 
+          <Pressable
             onPress={handleBulkDispatch}
             disabled={isDispatching}
             className="bg-black dark:bg-white w-full py-4 items-center rounded-[8px]"
           >
             <Text className="font-bold text-[12px] tracking-[2px] text-white dark:text-black">
-              {isDispatching ? "DISPATCHING..." : `MARK DISPATCHED (${selectedOrderIds.size})`}
+              {isDispatching
+                ? "DISPATCHING..."
+                : `MARK DISPATCHED (${selectedOrderIds.size})`}
             </Text>
           </Pressable>
         </View>
@@ -772,38 +967,41 @@ const isFallbackOrderImage = (image?: string) =>
             </Text>
             {selectedOrder ? (
               <View className="mt-6 gap-3">
-                {(["Arrived at Hub", "Out for Delivery", "Delivered"] as const).map(
-                  (milestone) => (
-                    <Pressable
-                        key={milestone}
-                        onPress={async () => {
-                        const report = await updateOrderLogisticsStatus(selectedOrder.id, milestone);
-                          setSelectedOrderId(null);
-                          if (report) {
-                            showToast({
-                              type: "success",
-                              message: `${milestone}: ${summarizeChannels(report) || "no live channels"}`,
-                            });
-                          }
-                        }}
-                      className={`rounded-[22px] border px-5 py-4 ${
+                {(
+                  ["Arrived at Hub", "Out for Delivery", "Delivered"] as const
+                ).map((milestone) => (
+                  <Pressable
+                    key={milestone}
+                    onPress={async () => {
+                      const report = await updateOrderLogisticsStatus(
+                        selectedOrder.id,
+                        milestone,
+                      );
+                      setSelectedOrderId(null);
+                      if (report) {
+                        showToast({
+                          type: "success",
+                          message: `${milestone}: ${summarizeChannels(report) || "no live channels"}`,
+                        });
+                      }
+                    }}
+                    className={`rounded-[22px] border px-5 py-4 ${
+                      selectedOrder.logisticsMilestone === milestone
+                        ? "border-[#161c28] bg-[#161c28]"
+                        : "border-[#e7eaf0] bg-white"
+                    }`}
+                  >
+                    <Text
+                      className={`font-bold text-[13px] ${
                         selectedOrder.logisticsMilestone === milestone
-                          ? "border-[#161c28] bg-[#161c28]"
-                          : "border-[#e7eaf0] bg-white"
+                          ? "text-white"
+                          : "text-black"
                       }`}
                     >
-                      <Text
-                        className={`font-bold text-[13px] ${
-                          selectedOrder.logisticsMilestone === milestone
-                            ? "text-white"
-                            : "text-black"
-                        }`}
-                      >
-                        {milestone}
-                      </Text>
-                    </Pressable>
-                  )
-                )}
+                      {milestone}
+                    </Text>
+                  </Pressable>
+                ))}
               </View>
             ) : null}
           </Pressable>

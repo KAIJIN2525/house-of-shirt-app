@@ -22,11 +22,21 @@ All notable changes to House of Shirts should be recorded here. This file follow
 - Expanded the original storefront into a combined commerce and store-operations platform.
 - Updated to Expo SDK 54, React Native 0.81, React 19, and typed Expo Router routes.
 - Added branded fonts, theme handling, dark mode, loaders, haptics, and notification feedback.
+- Changed admin order browsing to reveal additional orders automatically as staff scroll.
+- Added immediate navigation feedback and a data-loading skeleton for admin order details.
+
+### Fixed
+
+- Prevented the admin restock screen from showing duplicate or indefinite loading indicators when product refresh state becomes stale.
+- Filled customer email and phone details from profiles, orders, and synchronized Shopify customer records.
+- Replaced decorative local-only admin settings with shared campaign controls and operational workspace links.
 
 ### Security
 
 - Restricted profile visibility and blocked users from self-promoting through is_admin.
 - Added protected admin route gating and auditable owner/admin staff access grants.
+- Enforced admin authorization for privileged Edge Functions and secured scheduled Shopify sync calls with a Vault-backed secret.
+- Restored Shopify webhook HMAC verification and removed the predictable notification test-bypass fallback.
 
 ### Known limitations
 

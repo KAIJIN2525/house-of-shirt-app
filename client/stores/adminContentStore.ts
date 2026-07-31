@@ -82,16 +82,8 @@ export interface ExportRecord {
   rowCount: number;
 }
 export interface AdminSettings {
-  appName: string;
-  contactEmail: string;
-  currency: string;
-  responseTimeTarget: string;
-  escalationRule: string;
   globalNotifications: boolean;
-  orderUpdates: boolean;
   marketing: boolean;
-  instagramHandle: string;
-  twitterHandle: string;
 }
 export interface ShopifyWebhookHealth {
   id: string;
@@ -225,16 +217,8 @@ const defaultBrands: Brand[] = [
   },
 ];
 const defaultSettings: AdminSettings = {
-  appName: "House of Shirts Atelier",
-  contactEmail: "studio@houseofshirts.com",
-  currency: "NGN (₦)",
-  responseTimeTarget: "Under 2 hours",
-  escalationRule: "Notify Manager after 4h",
   globalNotifications: true,
-  orderUpdates: true,
   marketing: false,
-  instagramHandle: "@houseofshirtsatelier",
-  twitterHandle: "Not connected",
 };
 const defaultCampaigns: NotificationCampaign[] = [
   {
@@ -342,14 +326,15 @@ const defaultShopifySync: ShopifySyncState = {
 };
 const defaultShopifySyncLogs: ShopifySyncLog[] = [];
 
-
 export const normalizeShopifySyncState = (
   input?: Partial<ShopifySyncState> | null,
 ): ShopifySyncState => ({
   ...defaultShopifySync,
   ...(input ?? {}),
   storeDomain: input?.storeDomain || SHOPIFY_STORE_DOMAIN,
-  warningActive: Boolean(input?.warningActive ?? defaultShopifySync.warningActive),
+  warningActive: Boolean(
+    input?.warningActive ?? defaultShopifySync.warningActive,
+  ),
   warningTitle: input?.warningTitle || defaultShopifySync.warningTitle,
   warningMessage: input?.warningMessage || defaultShopifySync.warningMessage,
   syncingInRealtime: Boolean(
@@ -424,7 +409,7 @@ interface AdminContentState {
 
   saveBaseBanner: (banner: BannerContent) => void;
   archiveBanner: () => Promise<void>;
-  saveSettings: (settings: AdminSettings) => void;
+  saveSettings: (settings: AdminSettings) => Promise<void>;
   saveWelcome: (welcome: WelcomeContent) => Promise<void>;
   saveIntro: (intro: IntroContent) => Promise<void>;
   saveBrands: (brands: Brand[]) => void;
@@ -483,12 +468,18 @@ const useAdminContentStoreBase = create<AdminContentState>()(
           const snapshot = await service.fetchManagedContent();
           set((state) => ({
             banner: snapshot.banner ?? state.banner,
-            baseBanner: snapshot.banner?.isDefault ? snapshot.banner : state.baseBanner,
+            baseBanner: snapshot.banner?.isDefault
+              ? snapshot.banner
+              : state.baseBanner,
             welcome: snapshot.welcome ?? state.welcome,
             intro: snapshot.intro ?? state.intro,
+            settings: snapshot.settings ?? state.settings,
           }));
         } catch (error) {
-          console.warn("Managed content sync unavailable; using cached content:", error);
+          console.warn(
+            "Managed content sync unavailable; using cached content:",
+            error,
+          );
         } finally {
           set({ isLoadingManagedContent: false });
         }
@@ -524,18 +515,19 @@ const useAdminContentStoreBase = create<AdminContentState>()(
               shopifySyncLogs: logs,
               shopifySync: {
                 ...state.shopifySync,
-                lastSuccessfulSync: logs.length > 0 ? (logs[0].completedAt || logs[0].startedAt) : state.shopifySync.lastSuccessfulSync
-              }
+                lastSuccessfulSync:
+                  logs.length > 0
+                    ? logs[0].completedAt || logs[0].startedAt
+                    : state.shopifySync.lastSuccessfulSync,
+              },
             }));
           }
-
         } catch (error) {
           console.error("Error fetching sync logs:", error);
         } finally {
           set({ isLoadingSyncLogs: false });
         }
       },
-
 
       fetchTemplates: async () => {
         set({ isLoadingTemplates: true });
@@ -570,13 +562,15 @@ const useAdminContentStoreBase = create<AdminContentState>()(
       saveTemplate: async (template) => {
         try {
           const { supabase } = await import("@/lib/supabase");
-          const { error } = await supabase.from("notification_templates").upsert({
-            id: template.id.includes("temp-") ? undefined : template.id,
-            event_key: template.eventKey,
-            title: template.title,
-            body: template.body,
-            updated_at: new Date().toISOString(),
-          });
+          const { error } = await supabase
+            .from("notification_templates")
+            .upsert({
+              id: template.id.includes("temp-") ? undefined : template.id,
+              event_key: template.eventKey,
+              title: template.title,
+              body: template.body,
+              updated_at: new Date().toISOString(),
+            });
 
           if (error) throw error;
           await get().fetchTemplates();
@@ -606,25 +600,36 @@ const useAdminContentStoreBase = create<AdminContentState>()(
       saveBanner: async (banner) => {
         const { saveEditorial } = await import("@/services/managed-content");
         const saved = await saveEditorial(banner);
-        set({ banner: saved, ...(saved.isDefault ? { baseBanner: saved } : {}) });
+        set({
+          banner: saved,
+          ...(saved.isDefault ? { baseBanner: saved } : {}),
+        });
       },
 
       saveBaseBanner: (baseBanner) => set({ baseBanner }),
       archiveBanner: async () => {
-        const { archiveCurrentEditorial } = await import("@/services/managed-content");
+        const { archiveCurrentEditorial } =
+          await import("@/services/managed-content");
         await archiveCurrentEditorial();
         set((state) => ({
           banner: { ...state.baseBanner, isActive: true, archived: false },
         }));
       },
-      saveSettings: (settings) => set({ settings }),
+      saveSettings: async (settings) => {
+        const { saveManagedDocument } =
+          await import("@/services/managed-content");
+        await saveManagedDocument("admin_settings", settings);
+        set({ settings });
+      },
       saveWelcome: async (welcome) => {
-        const { saveManagedDocument } = await import("@/services/managed-content");
+        const { saveManagedDocument } =
+          await import("@/services/managed-content");
         await saveManagedDocument("welcome", welcome);
         set({ welcome });
       },
       saveIntro: async (intro) => {
-        const { saveManagedDocument } = await import("@/services/managed-content");
+        const { saveManagedDocument } =
+          await import("@/services/managed-content");
         await saveManagedDocument("onboarding", intro);
         set({ intro });
       },
@@ -726,11 +731,16 @@ const useAdminContentStoreBase = create<AdminContentState>()(
         }));
         try {
           const { supabase } = await import("@/lib/supabase");
-          await supabase.from("app_notifications").update({ read: true }).eq("id", id);
-        } catch (e) { console.error(e); }
+          await supabase
+            .from("app_notifications")
+            .update({ read: true })
+            .eq("id", id);
+        } catch (e) {
+          console.error(e);
+        }
       },
       toggleNotificationRead: async (id) => {
-        const current = get().customerNotifications.find(n => n.id === id);
+        const current = get().customerNotifications.find((n) => n.id === id);
         const newRead = !current?.read;
         set((state) => ({
           customerNotifications: state.customerNotifications.map((n) =>
@@ -739,8 +749,13 @@ const useAdminContentStoreBase = create<AdminContentState>()(
         }));
         try {
           const { supabase } = await import("@/lib/supabase");
-          await supabase.from("app_notifications").update({ read: newRead }).eq("id", id);
-        } catch (e) { console.error(e); }
+          await supabase
+            .from("app_notifications")
+            .update({ read: newRead })
+            .eq("id", id);
+        } catch (e) {
+          console.error(e);
+        }
       },
       markAllNotificationsRead: async () => {
         set((state) => ({
@@ -751,11 +766,18 @@ const useAdminContentStoreBase = create<AdminContentState>()(
         }));
         try {
           const { supabase } = await import("@/lib/supabase");
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (user) {
-            await supabase.from("app_notifications").update({ read: true }).eq("user_id", user.id);
+            await supabase
+              .from("app_notifications")
+              .update({ read: true })
+              .eq("user_id", user.id);
           }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+          console.error(e);
+        }
       },
       archiveNotification: async (id) => {
         set((state) => ({
@@ -765,8 +787,13 @@ const useAdminContentStoreBase = create<AdminContentState>()(
         }));
         try {
           const { supabase } = await import("@/lib/supabase");
-          await supabase.from("app_notifications").update({ archived: true }).eq("id", id);
-        } catch (e) { console.error(e); }
+          await supabase
+            .from("app_notifications")
+            .update({ archived: true })
+            .eq("id", id);
+        } catch (e) {
+          console.error(e);
+        }
       },
       restoreNotification: async (id) => {
         set((state) => ({
@@ -776,8 +803,13 @@ const useAdminContentStoreBase = create<AdminContentState>()(
         }));
         try {
           const { supabase } = await import("@/lib/supabase");
-          await supabase.from("app_notifications").update({ archived: false }).eq("id", id);
-        } catch (e) { console.error(e); }
+          await supabase
+            .from("app_notifications")
+            .update({ archived: false })
+            .eq("id", id);
+        } catch (e) {
+          console.error(e);
+        }
       },
       hydrateShopifySync: (input) =>
         set((state) => ({
@@ -817,7 +849,10 @@ const useAdminContentStoreBase = create<AdminContentState>()(
         };
         set((state) => ({
           shopifySync: updatedState,
-          shopifySyncLogs: [log, ...normalizeShopifySyncLogs(state.shopifySyncLogs)],
+          shopifySyncLogs: [
+            log,
+            ...normalizeShopifySyncLogs(state.shopifySyncLogs),
+          ],
         }));
         return { syncState: updatedState, log };
       },
@@ -828,7 +863,9 @@ const useAdminContentStoreBase = create<AdminContentState>()(
       fetchCustomerNotifications: async () => {
         try {
           const { supabase } = await import("@/lib/supabase");
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           if (!user) return;
 
           const { data, error } = await supabase
@@ -845,7 +882,10 @@ const useAdminContentStoreBase = create<AdminContentState>()(
               label: n.label,
               title: n.title,
               message: n.message,
-              time: new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              time: new Date(n.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
               icon: n.icon,
               targetType: n.target_type,
               targetValue: n.target_value,

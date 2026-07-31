@@ -1,4 +1,5 @@
 import type {
+  AdminSettings,
   BannerContent,
   IntroContent,
   WelcomeContent,
@@ -26,6 +27,7 @@ export interface ManagedContentSnapshot {
   banner?: BannerContent;
   welcome?: WelcomeContent;
   intro?: IntroContent;
+  settings?: AdminSettings;
 }
 export interface ManagedEditorialVersion {
   id: string;
@@ -78,8 +80,12 @@ const selectCurrentEditorial = (rows: any[]) => {
   const eligible = rows
     .filter((row) => {
       if (!["live", "scheduled"].includes(row.status)) return false;
-      const starts = row.display_start ? new Date(row.display_start).getTime() : -Infinity;
-      const ends = row.display_end ? new Date(row.display_end).getTime() : Infinity;
+      const starts = row.display_start
+        ? new Date(row.display_start).getTime()
+        : -Infinity;
+      const ends = row.display_end
+        ? new Date(row.display_end).getTime()
+        : Infinity;
       return starts <= now && ends > now;
     })
     .sort(
@@ -92,37 +98,43 @@ const selectCurrentEditorial = (rows: any[]) => {
     .filter((row) => row.is_default && row.status !== "archived")
     .sort(
       (left, right) =>
-        new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+        new Date(right.updated_at).getTime() -
+        new Date(left.updated_at).getTime(),
     )[0];
 };
 
-export const fetchManagedContent = async (): Promise<ManagedContentSnapshot> => {
-  const [{ data: editorials, error: editorialError }, { data: documents, error: documentError }] =
-    await Promise.all([
+export const fetchManagedContent =
+  async (): Promise<ManagedContentSnapshot> => {
+    const [
+      { data: editorials, error: editorialError },
+      { data: documents, error: documentError },
+    ] = await Promise.all([
       supabase
         .from("editorials")
         .select("*, media_assets(public_url)")
         .order("updated_at", { ascending: false })
         .limit(50),
-      supabase
-        .from("managed_app_content")
-        .select("content_key, content"),
+      supabase.from("managed_app_content").select("content_key, content"),
     ]);
 
-  if (editorialError) throw editorialError;
-  if (documentError) throw documentError;
+    if (editorialError) throw editorialError;
+    if (documentError) throw documentError;
 
-  const selected = selectCurrentEditorial(editorials ?? []);
-  const byKey = new Map(
-    (documents ?? []).map((document: any) => [document.content_key, document.content]),
-  );
+    const selected = selectCurrentEditorial(editorials ?? []);
+    const byKey = new Map(
+      (documents ?? []).map((document: any) => [
+        document.content_key,
+        document.content,
+      ]),
+    );
 
-  return {
-    banner: selected ? mapEditorial(selected) : undefined,
-    welcome: byKey.get("welcome") as WelcomeContent | undefined,
-    intro: byKey.get("onboarding") as IntroContent | undefined,
+    return {
+      banner: selected ? mapEditorial(selected) : undefined,
+      welcome: byKey.get("welcome") as WelcomeContent | undefined,
+      intro: byKey.get("onboarding") as IntroContent | undefined,
+      settings: byKey.get("admin_settings") as AdminSettings | undefined,
+    };
   };
-};
 
 export const saveEditorial = async (banner: BannerContent) => {
   const {
@@ -214,8 +226,8 @@ export const archiveCurrentEditorial = async () => {
   if (error) throw error;
 };
 export const saveManagedDocument = async (
-  key: "welcome" | "onboarding",
-  content: WelcomeContent | IntroContent,
+  key: "welcome" | "onboarding" | "admin_settings",
+  content: WelcomeContent | IntroContent | AdminSettings,
 ) => {
   const {
     data: { user },
@@ -260,7 +272,9 @@ export const listMediaAssets = async (): Promise<ManagedMediaAsset[]> => {
   }));
 };
 
-export const listEditorialVersions = async (): Promise<ManagedEditorialVersion[]> => {
+export const listEditorialVersions = async (): Promise<
+  ManagedEditorialVersion[]
+> => {
   const { data, error } = await supabase
     .from("editorials")
     .select("*, media_assets(public_url)")

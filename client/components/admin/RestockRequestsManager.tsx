@@ -1,5 +1,6 @@
 import { AppText as Text } from "@/components/AppText";
 import { HouseFeedbackModal } from "@/components/feedback/HouseFeedbackModal";
+import { HouseLoader } from "@/components/loading/HouseLoader";
 import { Product } from "@/constants/products";
 import { supabase } from "@/lib/supabase";
 import { useProductsStore } from "@/stores/productsStore";
@@ -8,7 +9,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
@@ -19,6 +19,30 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Channel = "app" | "push" | "email" | "sms";
+
+const REQUEST_TIMEOUT_MS = 15000;
+
+async function withTimeout<T>(request: PromiseLike<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(request),
+      new Promise<T>((_resolve, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                "The request timed out. Check your connection and try again.",
+              ),
+            ),
+          REQUEST_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 interface RestockRequest {
   id: string;
@@ -216,13 +240,13 @@ export function RestockRequestsManager() {
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [{ data, error }] = await Promise.all([
+      void fetchProducts();
+      const { data, error } = await withTimeout(
         supabase
           .from("back_in_stock_requests")
           .select("*")
           .order("created_at", { ascending: false }),
-        fetchProducts(),
-      ]);
+      );
       if (error) throw error;
       const rows = (data ?? []) as RestockRequest[];
       const ids = [...new Set(rows.map((request) => request.user_id))];
@@ -546,7 +570,7 @@ export function RestockRequestsManager() {
         ListHeaderComponent={header}
         ListEmptyComponent={
           isLoading ? (
-            <ActivityIndicator color={isDark ? "#fff" : "#111"} />
+            <HouseLoader label="LOADING REQUESTS" />
           ) : (
             <View className="bg-white px-5 py-8 dark:bg-[#101215]">
               <Text className="text-[19px] font-bold text-black dark:text-white">
@@ -561,7 +585,7 @@ export function RestockRequestsManager() {
         contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading}
+            refreshing={isLoading && requests.length > 0}
             onRefresh={fetchRequests}
             tintColor={isDark ? "#fff" : "#111"}
           />

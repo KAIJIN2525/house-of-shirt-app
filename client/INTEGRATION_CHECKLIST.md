@@ -22,7 +22,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Profile-creation trigger, sign-out store cleanup, and `profiles.is_admin` model.
 - [ ] Configure and test production OAuth/redirect URLs.
 - [x] Set-new-password deep-link flow with recovery-session verification.
-- [ ] Verify all admin writes reject non-admin users server-side; admin routes are now guarded in-app.
+- [x] Verified privileged admin Edge Functions and database writes require server-side admin authorization; admin routes are also guarded in-app.
+- [ ] Run final staff-access acceptance testing with a real non-admin colleague account before release.
 - [ ] Add account deletion, user data export, and email verification/resend UX.
 
 ## Catalogue, search, favorites, and restock

@@ -1,5 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Product, ProductSizeOption, ProductVariant } from "@/constants/products";
+import {
+  Product,
+  ProductSizeOption,
+  ProductVariant,
+} from "@/constants/products";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -30,7 +34,10 @@ const normalizeProduct = (product: Product): Product => ({
 const stripHtml = (value?: string | null) =>
   (value ?? "").replace(/<[^>]*>?/gm, "").trim();
 
-const getOptionValues = (options: any[] | null | undefined, optionName: string) => {
+const getOptionValues = (
+  options: any[] | null | undefined,
+  optionName: string,
+) => {
   const match = options?.find(
     (option) =>
       typeof option?.name === "string" &&
@@ -42,7 +49,10 @@ const getOptionValues = (options: any[] | null | undefined, optionName: string) 
     : undefined;
 };
 
-const findOption = (options: any[] | null | undefined, optionNames: string[]) => {
+const findOption = (
+  options: any[] | null | undefined,
+  optionNames: string[],
+) => {
   const normalizedNames = optionNames.map((name) => name.toLowerCase());
 
   return options?.find(
@@ -61,7 +71,9 @@ const getVariantOptionValue = (variant: any, position?: number) => {
 };
 
 const getVariantInventory = (variant: any) => {
-  const parsed = Number(variant?.inventory_quantity ?? variant?.inventoryQuantity ?? 0);
+  const parsed = Number(
+    variant?.inventory_quantity ?? variant?.inventoryQuantity ?? 0,
+  );
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
@@ -77,12 +89,18 @@ const buildVariants = (
       const selectedOptions = productOptions
         .map((option, index) => ({
           name: String(option?.name ?? `Option ${index + 1}`),
-          value: String(variant?.[`option${Number(option?.position ?? index + 1)}`] ?? ""),
+          value: String(
+            variant?.[`option${Number(option?.position ?? index + 1)}`] ?? "",
+          ),
         }))
         .filter((option) => option.value);
       return {
         id: String(variant.id),
-        title: String(variant.title ?? selectedOptions.map((option) => option.value).join(" / ") ?? "Default"),
+        title: String(
+          variant.title ??
+            selectedOptions.map((option) => option.value).join(" / ") ??
+            "Default",
+        ),
         price: Number(variant.price ?? 0),
         available:
           variant.available === true ||
@@ -92,7 +110,11 @@ const buildVariants = (
           inventoryQuantity > 0,
         inventoryQuantity,
         selectedOptions,
-        image: variant.image?.src ?? variant.image?.url ?? variant.featuredImage?.url ?? undefined,
+        image:
+          variant.image?.src ??
+          variant.image?.url ??
+          variant.featuredImage?.url ??
+          undefined,
       };
     });
 };
@@ -143,7 +165,9 @@ const buildSizeOptions = (
         inventoryQuantity > 0 ||
         (inventoryQuantity === 0 && hasExplicitAvailability),
       inventoryQuantity,
-      variantId: matchingVariants[0]?.id ? String(matchingVariants[0].id) : undefined,
+      variantId: matchingVariants[0]?.id
+        ? String(matchingVariants[0].id)
+        : undefined,
     };
   });
 };
@@ -176,7 +200,7 @@ export const useProductsStore = create<ProductsState>()(
         set({ isLoading: true });
         try {
           const { supabase } = await import("@/lib/supabase");
-          
+
           let allData: any[] = [];
           let from = 0;
           const pageSize = 1000;
@@ -205,20 +229,25 @@ export const useProductsStore = create<ProductsState>()(
 
           const data = allData;
 
-
           const mappedProducts: Product[] = (data ?? []).map((product: any) => {
             const firstVariant = Array.isArray(product.variants)
               ? product.variants[0]
               : undefined;
-            const sizeOptions = buildSizeOptions(product.options, product.variants);
+            const sizeOptions = buildSizeOptions(
+              product.options,
+              product.variants,
+            );
             const variants = buildVariants(product.options, product.variants);
-            const rawImages = Array.isArray(product.images) ? product.images : [];
+            const rawImages = Array.isArray(product.images)
+              ? product.images
+              : [];
             const images = [
               product.image_url,
-              ...rawImages.map((img: any) => (typeof img === 'string' ? img : img?.src)),
+              ...rawImages.map((img: any) =>
+                typeof img === "string" ? img : img?.src,
+              ),
             ].filter(Boolean);
             const uniqueImages = Array.from(new Set(images));
-
 
             const derivedDescription =
               stripHtml(product.description) ||
@@ -229,8 +258,12 @@ export const useProductsStore = create<ProductsState>()(
             return normalizeProduct({
               id: String(product.shopify_id ?? product.id),
               name: product.title ?? "Untitled Product",
-              image: product.image_url || uniqueImages[0] || DEFAULT_PRODUCT_IMAGE,
-              images: uniqueImages.length > 0 ? uniqueImages : [DEFAULT_PRODUCT_IMAGE],
+              image:
+                product.image_url || uniqueImages[0] || DEFAULT_PRODUCT_IMAGE,
+              images:
+                uniqueImages.length > 0
+                  ? uniqueImages
+                  : [DEFAULT_PRODUCT_IMAGE],
               variantId: firstVariant?.id ? String(firstVariant.id) : undefined,
               variants,
 
@@ -247,12 +280,12 @@ export const useProductsStore = create<ProductsState>()(
               sizes:
                 sizeOptions.length > 0
                   ? sizeOptions.map((option) => option.value)
-                  : getOptionValues(product.options, "size") ?? 
-                    getOptionValues(product.options, "shoe size") ?? 
-                    getOptionValues(product.options, "eu size") ?? 
-                    getOptionValues(product.options, "us size") ?? 
-                    getOptionValues(product.options, "uk size") ?? 
-                [],
+                  : (getOptionValues(product.options, "size") ??
+                    getOptionValues(product.options, "shoe size") ??
+                    getOptionValues(product.options, "eu size") ??
+                    getOptionValues(product.options, "us size") ??
+                    getOptionValues(product.options, "uk size") ??
+                    []),
               sizeOptions,
               colors:
                 getOptionValues(product.options, "color") ??
@@ -318,8 +351,13 @@ export const useProductsStore = create<ProductsState>()(
     {
       name: "@products",
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        products: state.products,
+        hasLoaded: state.hasLoaded,
+      }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          state.isLoading = false;
           state.products = state.products.map(normalizeProduct);
         }
       },

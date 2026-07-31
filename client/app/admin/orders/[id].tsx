@@ -16,12 +16,15 @@ import {
   View,
 } from "react-native";
 import { AppText as Text } from "@/components/AppText";
+import { AdminOrderDetailSkeleton } from "@/components/loading/AdminOrderDetailSkeleton";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../../global.css";
 
-const formatOrderReference = (id: string) => id.startsWith("#") ? id : `#${id}`;
+const formatOrderReference = (id: string) =>
+  id.startsWith("#") ? id : `#${id}`;
 
-const normalizePhone = (value?: string) => (value ?? "").replace(/\D/g, "").replace(/^234/, "0");
+const normalizePhone = (value?: string) =>
+  (value ?? "").replace(/\D/g, "").replace(/^234/, "0");
 
 const milestoneOptions: {
   label: string;
@@ -43,6 +46,8 @@ export default function AdminOrderDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
   const {
     orders,
+    isLoading,
+    fetchOrders,
     bulkDispatchOrders,
     updateOrderLogisticsStatus,
     addOutreachNote,
@@ -50,10 +55,18 @@ export default function AdminOrderDetailScreen() {
   const { customers, fetchCustomers } = useAdminCustomersStore();
 
   const order = orders.find((orderItem) => orderItem.id === id);
+  const [hasRequestedOrder, setHasRequestedOrder] = useState(false);
 
   useEffect(() => {
     void fetchCustomers();
   }, [fetchCustomers]);
+
+  useEffect(() => {
+    if (!order && !hasRequestedOrder && !isLoading) {
+      setHasRequestedOrder(true);
+      void fetchOrders();
+    }
+  }, [fetchOrders, hasRequestedOrder, isLoading, order]);
 
   const matchedBlacklistedCustomer = useMemo(() => {
     if (!order) return undefined;
@@ -69,14 +82,17 @@ export default function AdminOrderDetailScreen() {
 
       return (
         (orderName.length > 0 && customerName === orderName) ||
-        (orderPhone.length >= 7 && customerPhone.endsWith(orderPhone.slice(-7))) ||
-        (customerPhone.length >= 7 && orderPhone.endsWith(customerPhone.slice(-7)))
+        (orderPhone.length >= 7 &&
+          customerPhone.endsWith(orderPhone.slice(-7))) ||
+        (customerPhone.length >= 7 &&
+          orderPhone.endsWith(customerPhone.slice(-7)))
       );
     });
   }, [customers, order]);
 
   const isBlacklistedOrder =
-    order?.customerRiskStatus === "Blacklisted" || Boolean(matchedBlacklistedCustomer);
+    order?.customerRiskStatus === "Blacklisted" ||
+    Boolean(matchedBlacklistedCustomer);
   const blacklistReason =
     order?.customerRiskReason ||
     matchedBlacklistedCustomer?.blacklistReason ||
@@ -87,9 +103,14 @@ export default function AdminOrderDetailScreen() {
   const [isDispatching, setIsDispatching] = useState(false);
 
   // Custom modal states replacing native alerts
-  const [customAlert, setCustomAlert] = useState<{ title: string; message: string } | null>(null);
+  const [customAlert, setCustomAlert] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [selectedMilestone, setSelectedMilestone] = useState<typeof milestoneOptions[number]["value"] | null>(null);
+  const [selectedMilestone, setSelectedMilestone] = useState<
+    (typeof milestoneOptions)[number]["value"] | null
+  >(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const summarizeChannels = (channels: {
@@ -100,20 +121,47 @@ export default function AdminOrderDetailScreen() {
     admin: string;
   }) =>
     [
-      channels.email === "sent" ? "email" : channels.email === "failed" ? "email failed" : null,
-      channels.push === "sent" ? "push" : channels.push === "failed" ? "push failed" : null,
-      channels.app === "sent" ? "in-app" : channels.app === "failed" ? "in-app failed" : null,
-      channels.admin === "sent" ? "admin" : channels.admin === "failed" ? "admin failed" : null,
-      channels.sms === "sent" ? "sms" : channels.sms === "failed" ? "sms failed" : null,
+      channels.email === "sent"
+        ? "email"
+        : channels.email === "failed"
+          ? "email failed"
+          : null,
+      channels.push === "sent"
+        ? "push"
+        : channels.push === "failed"
+          ? "push failed"
+          : null,
+      channels.app === "sent"
+        ? "in-app"
+        : channels.app === "failed"
+          ? "in-app failed"
+          : null,
+      channels.admin === "sent"
+        ? "admin"
+        : channels.admin === "failed"
+          ? "admin failed"
+          : null,
+      channels.sms === "sent"
+        ? "sms"
+        : channels.sms === "failed"
+          ? "sms failed"
+          : null,
     ]
       .filter(Boolean)
       .join(", ");
+
+  if (!order && (!hasRequestedOrder || isLoading)) {
+    return <AdminOrderDetailSkeleton />;
+  }
 
   if (!order) {
     return (
       <SafeAreaView className="flex-1 bg-[#f4f5f7] dark:bg-[#050505] items-center justify-center">
         <Text className="text-gray-500">Order not found.</Text>
-        <Pressable onPress={() => router.back()} className="mt-4 bg-[#111] px-4 py-2">
+        <Pressable
+          onPress={() => router.back()}
+          className="mt-4 bg-[#111] px-4 py-2"
+        >
           <Text className="text-white font-bold text-xs">BACK</Text>
         </Pressable>
       </SafeAreaView>
@@ -131,7 +179,7 @@ export default function AdminOrderDetailScreen() {
       const firstReport = reports[0];
       showCustomAlert(
         "Order Dispatched",
-        `Order ${formatOrderReference(order.id)} is now marked as Shipped.`
+        `Order ${formatOrderReference(order.id)} is now marked as Shipped.`,
       );
       if (firstReport) {
         showToast({
@@ -139,7 +187,7 @@ export default function AdminOrderDetailScreen() {
           message: `${firstReport.customerName}: ${summarizeChannels(firstReport.channels) || "no live channels"}`,
         });
       }
-    } catch (error) {
+    } catch {
       showCustomAlert("Fulfillment Error", "Failed to dispatch order.");
     } finally {
       setIsDispatching(false);
@@ -154,14 +202,19 @@ export default function AdminOrderDetailScreen() {
     addOutreachNote(order.id, newNote.trim());
     setNewNote("");
     setIsNoteModalOpen(false);
-    showCustomAlert("Comment Recorded", "Private outreach log has been recorded.");
+    showCustomAlert(
+      "Comment Recorded",
+      "Private outreach log has been recorded.",
+    );
   };
 
   const handleContactCustomer = () => {
     setIsContactModalOpen(true);
   };
 
-  const handleStatusChange = (milestone: typeof milestoneOptions[number]["value"]) => {
+  const handleStatusChange = (
+    milestone: (typeof milestoneOptions)[number]["value"],
+  ) => {
     setSelectedMilestone(milestone);
     setIsStatusModalOpen(true);
   };
@@ -624,7 +677,8 @@ export default function AdminOrderDetailScreen() {
               Update Order Status?
             </Text>
             <Text className="mt-2 font-normal text-[13px] leading-6 text-neutral-500 dark:text-neutral-400">
-              Are you sure you want to transition order {formatOrderReference(order.id)} status to{" "}
+              Are you sure you want to transition order{" "}
+              {formatOrderReference(order.id)} status to{" "}
               <Text className="font-bold text-black dark:text-white">
                 &apos;{selectedMilestone}&apos;
               </Text>
@@ -692,7 +746,8 @@ export default function AdminOrderDetailScreen() {
               Contact {order.customerName}
             </Text>
             <Text className="mt-1 text-xs text-neutral-400">
-              Select a channel to reach out regarding order {formatOrderReference(order.id)}:
+              Select a channel to reach out regarding order{" "}
+              {formatOrderReference(order.id)}:
             </Text>
 
             <View className="mt-6 gap-3">

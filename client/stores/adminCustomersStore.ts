@@ -140,15 +140,37 @@ const buildCustomerMapFromSupabase = (
     profilesById.set(String(profile.id), profile);
   });
 
+  const profileIdByEmail = new Map(
+    profiles
+      .filter((profile) => profile.email)
+      .map((profile) => [
+        String(profile.email).trim().toLowerCase(),
+        String(profile.id),
+      ]),
+  );
   const groupedOrders = new Map<string, any[]>();
   orders.forEach((order) => {
-    const key = String(order.user_id ?? order.customer_name ?? order.id);
+    const orderEmail = String(order.email ?? "")
+      .trim()
+      .toLowerCase();
+    const key = String(
+      order.user_id ??
+        profileIdByEmail.get(orderEmail) ??
+        (orderEmail
+          ? `email:${orderEmail}`
+          : (order.customer_name ?? order.id)),
+    );
     groupedOrders.set(key, [...(groupedOrders.get(key) ?? []), order]);
   });
 
-  const existingById = new Map(existingCustomers.map((customer) => [customer.id, customer]));
+  const existingById = new Map(
+    existingCustomers.map((customer) => [customer.id, customer]),
+  );
   const existingByEmail = new Map(
-    existingCustomers.map((customer) => [customer.email.trim().toLowerCase(), customer]),
+    existingCustomers.map((customer) => [
+      customer.email.trim().toLowerCase(),
+      customer,
+    ]),
   );
 
   const allKeys = new Set<string>([
@@ -172,11 +194,11 @@ const buildCustomerMapFromSupabase = (
       "House Client";
     const email =
       profile?.email ??
+      primaryOrder?.email ??
       existingById.get(key)?.email ??
       `No email on file (${key.slice(0, 8)})`;
     const existing =
-      existingById.get(key) ??
-      existingByEmail.get(email.trim().toLowerCase());
+      existingById.get(key) ?? existingByEmail.get(email.trim().toLowerCase());
     const orderSummaries = customerOrders.slice(0, 5).map(buildOrderSummary);
     const lifetimeValue = customerOrders.reduce(
       (sum, order) => sum + Number(order.total_amount ?? order.total ?? 0),
@@ -203,21 +225,38 @@ const buildCustomerMapFromSupabase = (
         id: key,
         name: fullName,
         email,
-        phone: profile?.phone ?? existing?.phone ?? "",
+        phone:
+          profile?.phone ??
+          primaryOrder?.metadata?.phone ??
+          primaryOrder?.shipping_address?.phone ??
+          existing?.phone ??
+          "",
         avatar: normalizeAvatar(profile?.avatar_url ?? existing?.avatar),
         badge:
           existing?.badge ??
-          (customerOrders.length >= 5 ? "VIP" : customerOrders.length > 0 ? "ACTIVE" : "NEW"),
+          (customerOrders.length >= 5
+            ? "VIP"
+            : customerOrders.length > 0
+              ? "ACTIVE"
+              : "NEW"),
         tier: existing?.tier,
         statusLabel: existing?.blacklisted
           ? "BLACKLISTED"
-          : existing?.statusLabel ??
-            (customerOrders.length >= 5 ? "VIP" : customerOrders.length > 0 ? "ACTIVE" : "NEW"),
+          : (existing?.statusLabel ??
+            (customerOrders.length >= 5
+              ? "VIP"
+              : customerOrders.length > 0
+                ? "ACTIVE"
+                : "NEW")),
         statusTone:
           existing?.statusTone ??
           getDefaultStatusTone(
             existing?.badge ??
-              (customerOrders.length >= 5 ? "VIP" : customerOrders.length > 0 ? "ACTIVE" : "NEW"),
+              (customerOrders.length >= 5
+                ? "VIP"
+                : customerOrders.length > 0
+                  ? "ACTIVE"
+                  : "NEW"),
           ),
         lastActivity: lastActivityDate
           ? new Date(lastActivityDate).toLocaleDateString("en-US", {
@@ -233,12 +272,19 @@ const buildCustomerMapFromSupabase = (
         featuredPurchase:
           orderSummaries[0]?.title?.toUpperCase() ?? "NO ORDER HISTORY YET",
         featuredVariant:
-          orderSummaries[0]?.title ?? existing?.featuredVariant ?? "No variant recorded",
+          orderSummaries[0]?.title ??
+          existing?.featuredVariant ??
+          "No variant recorded",
         retentionScore:
           existing?.retentionScore ??
-          Math.min(100, customerOrders.length * 18 + (lifetimeValue > 0 ? 10 : 0)),
+          Math.min(
+            100,
+            customerOrders.length * 18 + (lifetimeValue > 0 ? 10 : 0),
+          ),
         preferredCategories:
-          categories.length > 0 ? categories.slice(0, 3) : existing?.preferredCategories ?? [],
+          categories.length > 0
+            ? categories.slice(0, 3)
+            : (existing?.preferredCategories ?? []),
         lifetimeValue,
         averageOrderValue,
         totalOrders: customerOrders.length,
@@ -255,7 +301,11 @@ const buildCustomerMapFromSupabase = (
           existing?.tags && existing.tags.length > 0
             ? existing.tags
             : [
-                customerOrders.length >= 5 ? "VIP" : customerOrders.length > 0 ? "ACTIVE" : "NEW",
+                customerOrders.length >= 5
+                  ? "VIP"
+                  : customerOrders.length > 0
+                    ? "ACTIVE"
+                    : "NEW",
                 profile ? "APP USER" : "ORDER ONLY",
               ],
         orders: orderSummaries,
@@ -269,6 +319,101 @@ const buildCustomerMapFromSupabase = (
     }
     return left.name.localeCompare(right.name);
   });
+};
+
+const mergeShopifyCustomerDetails = (
+  customers: AdminCustomerRecord[],
+  shopifyCustomers: any[],
+) => {
+  const shopifyByEmail = new Map(
+    shopifyCustomers
+      .filter((customer) => customer.email)
+      .map((customer) => [
+        String(customer.email).trim().toLowerCase(),
+        customer,
+      ]),
+  );
+
+  const merged = customers.map((customer) => {
+    const normalizedEmail = customer.email.trim().toLowerCase();
+    const shopify = shopifyByEmail.get(normalizedEmail);
+    if (!shopify) return customer;
+    shopifyByEmail.delete(normalizedEmail);
+    const shopifyName = [shopify.first_name, shopify.last_name]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    return normalizeCustomer({
+      ...customer,
+      name:
+        customer.name === "House Client" && shopifyName
+          ? shopifyName
+          : customer.name,
+      email: shopify.email,
+      phone: customer.phone || shopify.phone || "",
+      shopifySynced: true,
+      blacklisted: Boolean(shopify.blacklisted),
+      blacklistReason: shopify.blacklist_reason ?? "",
+      statusLabel: shopify.blacklisted ? "BLACKLISTED" : customer.statusLabel,
+      statusTone: shopify.blacklisted ? "dark" : customer.statusTone,
+      address:
+        customer.address?.line2 !== "No address on file"
+          ? customer.address
+          : {
+              line1: shopifyName || customer.name,
+              line2: "Shopify customer",
+              cityStateZip: shopify.city || "Unknown location",
+              country: shopify.country || "Unknown country",
+            },
+    });
+  });
+
+  shopifyByEmail.forEach((shopify) => {
+    const name =
+      [shopify.first_name, shopify.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || String(shopify.email).split("@")[0];
+    merged.push(
+      normalizeCustomer({
+        id: `shopify-${shopify.shopify_id}`,
+        name,
+        email: shopify.email,
+        phone: shopify.phone || "",
+        avatar: "",
+        badge: "ACTIVE",
+        statusLabel: shopify.blacklisted ? "BLACKLISTED" : "ACTIVE",
+        statusTone: shopify.blacklisted ? "dark" : "light",
+        lastActivity: "Shopify customer",
+        lastContactDate: "No contact yet",
+        featuredPurchase: "No order history yet",
+        featuredVariant: "No variant recorded",
+        retentionScore: 0,
+        preferredCategories: [],
+        lifetimeValue: 0,
+        averageOrderValue: 0,
+        totalOrders: 0,
+        shopifySynced: true,
+        blacklisted: Boolean(shopify.blacklisted),
+        blacklistReason: shopify.blacklist_reason ?? "",
+        communicationLogs: [],
+        address: {
+          line1: name,
+          line2: "Shopify customer",
+          cityStateZip: shopify.city || "Unknown location",
+          country: shopify.country || "Unknown country",
+        },
+        tags: ["SHOPIFY", "SYNCED"],
+        orders: [],
+      }),
+    );
+  });
+
+  return merged.sort(
+    (left, right) =>
+      right.totalOrders - left.totalOrders ||
+      left.name.localeCompare(right.name),
+  );
 };
 
 export const useAdminCustomersStore = create<AdminCustomersState>()(
@@ -288,21 +433,26 @@ export const useAdminCustomersStore = create<AdminCustomersState>()(
           const [
             { data: profiles, error: profilesError },
             { data: orders, error: ordersError },
-            { data: shopifyCustomers },
+            { data: shopifyCustomers, error: shopifyCustomersError },
           ] = await Promise.all([
             supabase
               .from("profiles")
               .select("id, email, full_name, phone, avatar_url, updated_at"),
             supabase
               .from("orders")
-              .select("id, user_id, customer_name, title, subtitle, total, total_amount, status, order_number, created_at, metadata"),
+              .select(
+                "id, user_id, email, customer_name, title, subtitle, total, total_amount, status, order_number, created_at, shipping_address, metadata",
+              ),
             supabase
               .from("shopify_customers")
-              .select("email, blacklisted, blacklist_reason, blacklisted_at"),
+              .select(
+                "shopify_id, email, first_name, last_name, phone, city, country, blacklisted, blacklist_reason, blacklisted_at",
+              ),
           ]);
 
           if (profilesError) throw profilesError;
           if (ordersError) throw ordersError;
+          if (shopifyCustomersError) throw shopifyCustomersError;
 
           const built = buildCustomerMapFromSupabase(
             profiles ?? [],
@@ -310,25 +460,10 @@ export const useAdminCustomersStore = create<AdminCustomersState>()(
             get().customers,
           );
 
-          // Overlay blacklist status from shopify_customers (source of truth)
-          const blacklistByEmail = new Map(
-            (shopifyCustomers ?? []).map((sc: any) => [
-              sc.email.toLowerCase(),
-              { blacklisted: sc.blacklisted, blacklistReason: sc.blacklist_reason ?? "" },
-            ]),
+          const customers = mergeShopifyCustomerDetails(
+            built,
+            shopifyCustomers ?? [],
           );
-
-          const customers = built.map((customer) => {
-            const bl = blacklistByEmail.get(customer.email.trim().toLowerCase());
-            if (!bl) return customer;
-            return normalizeCustomer({
-              ...customer,
-              blacklisted: bl.blacklisted,
-              blacklistReason: bl.blacklistReason,
-              statusLabel: bl.blacklisted ? "BLACKLISTED" : customer.statusLabel,
-              statusTone: bl.blacklisted ? "dark" : customer.statusTone,
-            });
-          });
 
           set({ customers, hasLoaded: true });
         } catch (error) {
@@ -369,9 +504,13 @@ export const useAdminCustomersStore = create<AdminCustomersState>()(
               {
                 ...c,
                 blacklisted,
-                blacklistReason: blacklisted ? (reason ?? "Restricted by admin.") : "",
+                blacklistReason: blacklisted
+                  ? (reason ?? "Restricted by admin.")
+                  : "",
                 statusLabel: blacklisted ? "BLACKLISTED" : c.badge,
-                statusTone: blacklisted ? "dark" : getDefaultStatusTone(c.badge),
+                statusTone: blacklisted
+                  ? "dark"
+                  : getDefaultStatusTone(c.badge),
               },
               {
                 id: `blacklist-${Date.now()}`,
@@ -392,7 +531,9 @@ export const useAdminCustomersStore = create<AdminCustomersState>()(
             .from("shopify_customers")
             .update({
               blacklisted,
-              blacklist_reason: blacklisted ? (reason ?? "Restricted by admin.") : null,
+              blacklist_reason: blacklisted
+                ? (reason ?? "Restricted by admin.")
+                : null,
               blacklisted_at: blacklisted ? new Date().toISOString() : null,
             })
             .eq("email", customer.email.trim().toLowerCase());
@@ -432,7 +573,8 @@ export const useAdminCustomersStore = create<AdminCustomersState>()(
         importedCustomers.forEach((incomingCustomer) => {
           const normalizedEmail = incomingCustomer.email.trim().toLowerCase();
           const existingIndex = next.findIndex(
-            (customer) => customer.email.trim().toLowerCase() === normalizedEmail,
+            (customer) =>
+              customer.email.trim().toLowerCase() === normalizedEmail,
           );
 
           if (existingIndex >= 0) {
@@ -462,8 +604,7 @@ export const useAdminCustomersStore = create<AdminCustomersState>()(
               avatar: DEFAULT_AVATAR,
               badge: incomingCustomer.tag === "VIP" ? "VIP" : "ACTIVE",
               statusLabel: incomingCustomer.tag === "VIP" ? "VIP" : "ACTIVE",
-              statusTone:
-                incomingCustomer.tag === "VIP" ? "dark" : "light",
+              statusTone: incomingCustomer.tag === "VIP" ? "dark" : "light",
               lastActivity: nowLabel(),
               lastContactDate: "No contact yet",
               featuredPurchase: "SHOPIFY IMPORT",
@@ -504,7 +645,8 @@ export const useAdminCustomersStore = create<AdminCustomersState>()(
               {
                 ...customer,
                 blacklisted: decision === "keep",
-                statusLabel: decision === "keep" ? "BLACKLISTED" : customer.badge,
+                statusLabel:
+                  decision === "keep" ? "BLACKLISTED" : customer.badge,
                 statusTone:
                   decision === "keep"
                     ? "dark"
