@@ -218,6 +218,25 @@ const Profile = () => {
               </View>
             </Pressable>
 
+            <Pressable
+              className="border-b border-gray-100 py-4 dark:border-white/10"
+              onPress={() => router.push("/profile/account-security" as any)}
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-3">
+                  <Ionicons
+                    name="shield-checkmark-outline"
+                    size={20}
+                    color={isDark ? "#fff" : "#000"}
+                  />
+                  <Text className="font-normal text-base text-black dark:text-white">
+                    Account & Privacy
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+              </View>
+            </Pressable>
+
             <View className="border-b border-gray-100 py-4 dark:border-white/10">
               <View className="flex-row items-start justify-between gap-4">
                 <View className="flex-row items-center gap-3">

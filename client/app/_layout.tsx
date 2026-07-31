@@ -324,6 +324,10 @@ function RootLayoutContent() {
                                 options={{ headerShown: false }}
                               />
                               <Stack.Screen
+                                name="profile/account-security"
+                                options={{ headerShown: false }}
+                              />
+                              <Stack.Screen
                                 name="modal"
                                 options={{
                                   presentation: "modal",

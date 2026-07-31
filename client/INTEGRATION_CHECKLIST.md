@@ -24,7 +24,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Set-new-password deep-link flow with recovery-session verification.
 - [x] Verified privileged admin Edge Functions and database writes require server-side admin authorization; admin routes are also guarded in-app.
 - [ ] Run final staff-access acceptance testing with a real non-admin colleague account before release.
-- [ ] Add account deletion, user data export, and email verification/resend UX.
+- [x] Added authenticated account deletion, privacy-safe user data export, and email verification/resend UX.
+- [ ] Run account deletion/export/email verification acceptance with a disposable real user before release.
 
 ## Catalogue, search, favorites, and restock
 
