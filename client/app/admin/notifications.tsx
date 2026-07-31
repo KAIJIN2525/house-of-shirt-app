@@ -78,7 +78,7 @@ export default function AdminNotificationsScreen() {
 
   React.useEffect(() => {
     fetchTemplates();
-  }, []);
+  }, [fetchTemplates]);
 
 
   const scheduledFor =
@@ -192,11 +192,11 @@ export default function AdminNotificationsScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin/settings" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin settings" onPress={() => router.push("/admin/settings" as any)}>
             <View className="h-7 w-7 items-center justify-center rounded-full bg-[#1f2736]">
               <Ionicons name="notifications" size={12} color="#f8f5ee" />
             </View>
@@ -238,37 +238,13 @@ export default function AdminNotificationsScreen() {
           </View>
         </View>
 
-        {/* Template Handlers */}
-        {(() => {
-          const handleSaveTemplate = async () => {
-            if (!editTitle || !editBody) return;
-            setIsSavingTemplate(true);
-            await saveTemplate({
-              id: editingTemplate?.id || `temp-${Date.now()}`,
-              eventKey: editingTemplate?.eventKey || "custom",
-              title: editTitle,
-              body: editBody,
-            });
-            setIsSavingTemplate(false);
-            setEditingTemplate(null);
-            setEditTitle("");
-            setEditBody("");
-          };
-
-          const handleDeleteTemplate = async (id: string) => {
-            await deleteTemplate(id);
-          };
-
-          return null;
-        })()}
-
 
 
         <View className="mt-8 px-6">
           <Text className="font-bold text-[10px] tracking-[1.5px] text-neutral-400">
             NOTIFICATION TITLE
           </Text>
-          <TextInput
+          <TextInput accessibilityLabel="e.g. The Autumn Collection is here"
             value={title}
             onChangeText={setTitle}
             placeholder="e.g. The Autumn Collection is here"
@@ -279,7 +255,7 @@ export default function AdminNotificationsScreen() {
           <Text className="mt-6 font-bold text-[10px] tracking-[1.5px] text-neutral-400">
             MESSAGE BODY
           </Text>
-          <TextInput
+          <TextInput accessibilityLabel="Craft your message with precision..."
             value={message}
             onChangeText={setMessage}
             multiline
@@ -392,7 +368,7 @@ export default function AdminNotificationsScreen() {
               </View>
             </Pressable>
           ) : (
-             <TextInput
+             <TextInput accessibilityLabel="e.g. Oxford Shirts"
               value={targetValue}
               onChangeText={setTargetValue}
               placeholder="e.g. Oxford Shirts"
@@ -529,7 +505,7 @@ export default function AdminNotificationsScreen() {
               <Ionicons name="arrow-forward" size={16} color="#ffffff" />
             </Pressable>
 
-            <Pressable onPress={handleSaveDraft} className="px-2 py-4">
+            <Pressable accessibilityRole="button" onPress={handleSaveDraft} className="px-2 py-4">
               <Text className="font-bold text-[12px] leading-5 text-black dark:text-white">
                 Save{"\n"}Draft
               </Text>
@@ -597,7 +573,7 @@ export default function AdminNotificationsScreen() {
           onPress={() => setIsProductPickerOpen(false)}
           className="flex-1 justify-end bg-black/35"
         >
-          <Pressable className="max-h-[75%] rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
+          <Pressable accessibilityViewIsModal className="max-h-[75%] rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
             <View className="self-center h-1.5 w-16 rounded-full bg-[#d7dbe2]" />
             <Text className="mt-5 font-bold text-[11px] tracking-[1.6px] text-neutral-400">
               PRODUCT TARGET
@@ -609,7 +585,7 @@ export default function AdminNotificationsScreen() {
             <View className="mt-4 mb-3">
               <View className="flex-row items-center rounded-2xl bg-[#eff1f4] px-4 py-3">
                 <Ionicons name="search" size={18} color="#94a3b8" />
-                <TextInput
+                <TextInput accessibilityLabel="Search products..."
                   value={productSearch}
                   onChangeText={setProductSearch}
                   placeholder="Search products..."
@@ -618,7 +594,7 @@ export default function AdminNotificationsScreen() {
                   autoFocus={false}
                 />
                 {productSearch.length > 0 && (
-                  <Pressable onPress={() => setProductSearch("")}>
+                  <Pressable accessibilityRole="button" onPress={() => setProductSearch("")}>
                     <Ionicons name="close-circle" size={18} color="#94a3b8" />
                   </Pressable>
                 )}
@@ -699,7 +675,7 @@ export default function AdminNotificationsScreen() {
           onPress={() => setIsOrderPickerOpen(false)}
           className="flex-1 justify-end bg-black/35"
         >
-          <Pressable className="max-h-[75%] rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
+          <Pressable accessibilityViewIsModal className="max-h-[75%] rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
             <View className="self-center h-1.5 w-16 rounded-full bg-[#d7dbe2]" />
             <Text className="mt-5 font-bold text-[11px] tracking-[1.6px] text-neutral-400">
               ORDER TARGET
@@ -772,7 +748,7 @@ export default function AdminNotificationsScreen() {
           onPress={() => setIsTemplatePickerOpen(false)}
           className="flex-1 justify-end bg-black/35"
         >
-          <Pressable className="max-h-[75%] rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
+          <Pressable accessibilityViewIsModal className="max-h-[75%] rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
             <View className="self-center h-1.5 w-16 rounded-full bg-[#d7dbe2]" />
             <Text className="mt-5 font-bold text-[11px] tracking-[1.6px] text-neutral-400">
               SELECT TEMPLATE
@@ -840,7 +816,7 @@ export default function AdminNotificationsScreen() {
       >
         <SafeAreaView className="flex-1 bg-[#f4f5f7] dark:bg-[#050505]">
           <View className="flex-row items-center justify-between px-6 py-4">
-            <Pressable onPress={() => {
+            <Pressable accessibilityRole="button" accessibilityLabel="Close template manager" onPress={() => {
               setIsTemplateManagerOpen(false);
               setEditingTemplate(null);
               setEditTitle("");
@@ -859,14 +835,14 @@ export default function AdminNotificationsScreen() {
               <Text className="font-bold text-[10px] tracking-[1.5px] text-neutral-400">
                 {editingTemplate ? "EDIT TEMPLATE" : "CREATE NEW TEMPLATE"}
               </Text>
-              <TextInput
+              <TextInput accessibilityLabel="Template Title (e.g. Order Shipped!)"
                 value={editTitle}
                 onChangeText={setEditTitle}
                 placeholder="Template Title (e.g. Order Shipped!)"
                 placeholderTextColor="#b0b6c0"
                 className="mt-2 bg-white px-4 py-4 font-normal text-[13px] text-neutral-700 dark:bg-[#101215] dark:text-white"
               />
-              <TextInput
+              <TextInput accessibilityLabel="Template Body... Use [Collection Name], [OrderNo], or [Waybill] as variables."
                 value={editBody}
                 onChangeText={setEditBody}
                 multiline
@@ -919,14 +895,14 @@ export default function AdminNotificationsScreen() {
                         </Text>
                       </View>
                       <View className="flex-row gap-4">
-                        <Pressable onPress={() => {
+                        <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${template.title}`} onPress={() => {
                           setEditingTemplate(template);
                           setEditTitle(template.title);
                           setEditBody(template.body);
                         }}>
                           <Ionicons name="create-outline" size={18} color="#3b82f6" />
                         </Pressable>
-                        <Pressable onPress={() => deleteTemplate(template.id)}>
+                        <Pressable accessibilityRole="button" accessibilityLabel={`Delete ${template.title}`} onPress={() => deleteTemplate(template.id)}>
                           <Ionicons name="trash-outline" size={18} color="#ef4444" />
                         </Pressable>
                       </View>

@@ -399,7 +399,7 @@ export default function AdminOrdersScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons
               name="arrow-back"
               size={22}
@@ -409,7 +409,7 @@ export default function AdminOrdersScreen() {
 
           <BrandLogo width={154} height={28} />
 
-          <Pressable onPress={() => router.push("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin dashboard" onPress={() => router.push("/admin" as any)}>
             <Ionicons
               name="log-out-outline"
               size={18}
@@ -479,7 +479,7 @@ export default function AdminOrdersScreen() {
                 REFINE RESULTS
               </Text>
               {hasActiveRefinements ? (
-                <Pressable onPress={clearRefinements}>
+                <Pressable accessibilityRole="button" onPress={clearRefinements}>
                   <Text className="font-bold text-[10px] tracking-[1.4px] text-[#b45309]">
                     CLEAR
                   </Text>
@@ -500,7 +500,7 @@ export default function AdminOrdersScreen() {
                 className="ml-3 flex-1 font-normal text-[14px] text-black dark:text-white"
               />
               {searchValue ? (
-                <Pressable onPress={() => setSearchValue("")}>
+                <Pressable accessibilityRole="button" onPress={() => setSearchValue("")}>
                   <Ionicons name="close-circle" size={18} color="#9ca3af" />
                 </Pressable>
               ) : null}
@@ -879,14 +879,14 @@ export default function AdminOrdersScreen() {
             <Text className="font-bold text-xl mb-4 dark:text-white">
               Quick Dispatch External Order
             </Text>
-            <TextInput
+            <TextInput accessibilityLabel="Customer Name (Required)"
               value={extName}
               onChangeText={setExtName}
               placeholder="Customer Name (Required)"
               className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white"
               placeholderTextColor="#9ca3af"
             />
-            <TextInput
+            <TextInput accessibilityLabel="Phone Number (Required for SMS)"
               value={extPhone}
               onChangeText={setExtPhone}
               placeholder="Phone Number (Required for SMS)"
@@ -894,7 +894,7 @@ export default function AdminOrdersScreen() {
               className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white"
               placeholderTextColor="#9ca3af"
             />
-            <TextInput
+            <TextInput accessibilityLabel="Email (Optional)"
               value={extEmail}
               onChangeText={setExtEmail}
               placeholder="Email (Optional)"
@@ -902,7 +902,7 @@ export default function AdminOrdersScreen() {
               className="bg-gray-100 dark:bg-white/10 p-4 mb-3 rounded-xl dark:text-white"
               placeholderTextColor="#9ca3af"
             />
-            <TextInput
+            <TextInput accessibilityLabel="Order Title/Description (Required)"
               value={extTitle}
               onChangeText={setExtTitle}
               placeholder="Order Title/Description (Required)"
@@ -957,7 +957,7 @@ export default function AdminOrdersScreen() {
           onPress={() => setSelectedOrderId(null)}
           className="flex-1 justify-end bg-black/35"
         >
-          <Pressable className="rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6 dark:bg-[#101215]">
+          <Pressable accessibilityViewIsModal className="rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6 dark:bg-[#101215]">
             <View className="self-center h-1.5 w-16 rounded-full bg-[#d7dbe2]" />
             <Text className="mt-5 font-bold text-[11px] tracking-[1.6px] text-neutral-400">
               ORDER ACTIONS
@@ -970,7 +970,7 @@ export default function AdminOrdersScreen() {
                 {(
                   ["Arrived at Hub", "Out for Delivery", "Delivered"] as const
                 ).map((milestone) => (
-                  <Pressable
+                  <Pressable accessibilityRole="button"
                     key={milestone}
                     onPress={async () => {
                       const report = await updateOrderLogisticsStatus(

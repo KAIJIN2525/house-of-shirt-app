@@ -275,7 +275,7 @@ export default function AdminShopifySyncScreen() {
       >
         {/* Navigation Header */}
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons
               name="arrow-back"
               size={22}
@@ -283,7 +283,7 @@ export default function AdminShopifySyncScreen() {
             />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin/settings" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin settings" onPress={() => router.push("/admin/settings" as any)}>
             <Ionicons
               name="log-out-outline"
               size={18}
@@ -308,7 +308,7 @@ export default function AdminShopifySyncScreen() {
                     </Text>
                   </View>
                 </View>
-                <Pressable onPress={() => void dismissShopifyWarning()}>
+                <Pressable accessibilityRole="button" onPress={() => void dismissShopifyWarning()}>
                   <Ionicons name="close" size={16} color="#a0a7b3" />
                 </Pressable>
               </View>
@@ -515,7 +515,7 @@ export default function AdminShopifySyncScreen() {
                       >
                         {webhook.status.toUpperCase()}
                       </Text>
-                      <Pressable
+                      <Pressable accessibilityLabel="Next page"
                         onPress={() =>
                           router.push({
                             pathname: "/admin/shopify-sync/webhook/[id]",
@@ -552,7 +552,7 @@ export default function AdminShopifySyncScreen() {
                 <Text className="font-bold text-[10px] tracking-[1.5px] text-neutral-400 uppercase">
                   RECENT SYNC LOG
                 </Text>
-                <Pressable
+                <Pressable accessibilityRole="button"
                   onPress={() =>
                     router.push("/admin/shopify-sync/history" as any)
                   }

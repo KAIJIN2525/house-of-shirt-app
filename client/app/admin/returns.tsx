@@ -155,11 +155,11 @@ export default function AdminReturnsScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin/settings" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin settings" onPress={() => router.push("/admin/settings" as any)}>
             <Ionicons
               name="log-out-outline"
               size={18}
@@ -204,7 +204,7 @@ export default function AdminReturnsScreen() {
         <View className="mt-8 px-6">
           <View className="flex-row items-center bg-white px-4 py-4 dark:bg-[#101215]">
             <Ionicons name="search" size={18} color="#9aa2ad" />
-            <TextInput
+            <TextInput accessibilityLabel="Search by Order ID or Customer..."
               value={searchValue}
               onChangeText={setSearchValue}
               placeholder="Search by Order ID or Customer..."
@@ -359,7 +359,7 @@ export default function AdminReturnsScreen() {
             <Text className="font-bold text-[11px] text-black">
               {currentPage} / {totalPages}
             </Text>
-            <Pressable
+            <Pressable accessibilityLabel="Next page"
               onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               className="h-9 w-9 items-center justify-center bg-white"
@@ -380,7 +380,7 @@ export default function AdminReturnsScreen() {
           onPress={() => setIsDateFilterOpen(false)}
           className="flex-1 justify-end bg-black/35"
         >
-          <Pressable className="rounded-t-[30px] bg-white px-6 pb-8 pt-6 dark:bg-[#101215]">
+          <Pressable accessibilityViewIsModal className="rounded-t-[30px] bg-white px-6 pb-8 pt-6 dark:bg-[#101215]">
             <View className="self-center h-1.5 w-16 rounded-full bg-[#d9dde4]" />
             <Text className="mt-5 font-bold text-[10px] tracking-[1.6px] text-neutral-400">
               FILTER RETURNS
@@ -393,7 +393,7 @@ export default function AdminReturnsScreen() {
               {DATE_FILTERS.map((filter) => {
                 const isActive = filter.key === dateWindow;
                 return (
-                  <Pressable
+                  <Pressable accessibilityRole="button"
                     key={filter.key}
                     onPress={() => {
                       setDateWindow(filter.key);

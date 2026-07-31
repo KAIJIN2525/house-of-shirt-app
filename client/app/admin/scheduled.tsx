@@ -32,7 +32,7 @@ export default function AdminScheduledScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color="#111111" />
           </Pressable>
           <BrandLogo width={154} height={28} />

@@ -37,7 +37,7 @@ export default function AdminExportScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />
@@ -130,7 +130,7 @@ export default function AdminExportScreen() {
               {statusMessage}
             </Text>
           ) : null}
-          <Pressable onPress={handleExport} className="bg-[#161c28] py-4">
+          <Pressable accessibilityRole="button" onPress={handleExport} className="bg-[#161c28] py-4">
             <Text className="text-center font-bold text-[11px] tracking-[2px] text-white">
               GENERATE CSV EXPORT
             </Text>

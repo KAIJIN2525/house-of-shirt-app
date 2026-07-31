@@ -30,7 +30,7 @@ const AlertRow = memo(function AlertRow({ alert, isDark, onPress }: {
 }) {
   const risk = isRisk(alert);
   return (
-    <Pressable onPress={() => onPress(alert)} className={`mb-3 border-l-[3px] px-5 py-5 ${risk ? "border-red-500 bg-[#fff7f7] dark:bg-[#1a1212]" : alert.read ? "border-neutral-200 bg-white dark:border-white/10 dark:bg-[#101215]" : "border-black bg-white dark:border-white dark:bg-[#101215]"}`}>
+    <Pressable accessibilityRole="button" onPress={() => onPress(alert)} className={`mb-3 border-l-[3px] px-5 py-5 ${risk ? "border-red-500 bg-[#fff7f7] dark:bg-[#1a1212]" : alert.read ? "border-neutral-200 bg-white dark:border-white/10 dark:bg-[#101215]" : "border-black bg-white dark:border-white dark:bg-[#101215]"}`}>
       <View className="flex-row items-start gap-4">
         <View className={`h-10 w-10 items-center justify-center rounded-full ${risk ? "bg-red-100 dark:bg-red-950" : "bg-[#eff0f2] dark:bg-[#1b1e23]"}`}>
           <Ionicons name={(alert.icon || "notifications-outline") as any} size={19} color={risk ? "#dc2626" : isDark ? "#fff" : "#111"} />
@@ -84,15 +84,15 @@ export default function AdminInboxScreen() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchAlerts} tintColor="#888" />}
         ListHeaderComponent={<>
           <View className="flex-row items-center justify-between pb-5 pt-4">
-            <Pressable onPress={() => router.navigate("/admin" as any)}><Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111"} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" hitSlop={10} onPress={() => router.navigate("/admin" as any)}><Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111"} /></Pressable>
             <BrandLogo width={154} height={28} />
-            <Pressable onPress={() => void markAllRead()}><Ionicons name="checkmark-done-outline" size={22} color={isDark ? "#f8fafc" : "#111"} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Mark all alerts read" hitSlop={10} onPress={() => void markAllRead()}><Ionicons name="checkmark-done-outline" size={22} color={isDark ? "#f8fafc" : "#111"} /></Pressable>
           </View>
           <Text className="text-[10px] font-bold tracking-[1.5px] text-neutral-400">OPERATIONS CENTER</Text>
           <Text className="mt-2 text-[42px] font-bold leading-[42px] text-black dark:text-white">Admin Inbox</Text>
           <Text className="mt-3 text-[13px] leading-6 text-neutral-500">Blacklist risk, stock demand, fulfillment alerts, and other events that need an admin decision.</Text>
           <View className="my-6 flex-row flex-wrap gap-2">
-            {filters.map((item) => <Pressable key={item} onPress={() => setFilter(item)} className={`px-4 py-3 ${filter === item ? "bg-black dark:bg-white" : "bg-white dark:bg-[#101215]"}`}>
+            {filters.map((item) => <Pressable accessibilityRole="button" accessibilityLabel={`${item} alerts`} accessibilityState={{ selected: filter === item }} key={item} onPress={() => setFilter(item)} className={`px-4 py-3 ${filter === item ? "bg-black dark:bg-white" : "bg-white dark:bg-[#101215]"}`}>
               <Text className={`text-[9px] font-bold tracking-[1.3px] ${filter === item ? "text-white dark:text-black" : "text-neutral-500"}`}>{item.toUpperCase()}{item === "unread" ? ` ${unread}` : ""}</Text>
             </Pressable>)}
           </View>

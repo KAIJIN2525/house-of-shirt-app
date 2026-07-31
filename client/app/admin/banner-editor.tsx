@@ -316,7 +316,7 @@ export default function AdminBannerEditorScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#f4f5f7] dark:bg-[#050505]">
       <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-        <Pressable onPress={() => router.navigate("/admin" as any)}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
           <Ionicons
             name="arrow-back"
             size={22}
@@ -382,6 +382,7 @@ export default function AdminBannerEditorScreen() {
                 </LinearGradient>
               </ImageBackground>
               <Pressable
+                accessibilityLabel="Change banner image"
                 onPress={handlePickBannerImage}
                 className="absolute right-4 top-4 h-12 w-12 items-center justify-center rounded-full bg-black/50 border border-white/20"
               >
@@ -595,12 +596,14 @@ export default function AdminBannerEditorScreen() {
               </View>
               <View className="absolute right-4 top-4 flex-row gap-2">
                 <Pressable
+                  accessibilityLabel="Choose welcome image"
                   onPress={() => handlePickWelcomeMedia("image")}
                   className="h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20"
                 >
                   <Ionicons name="image" size={18} color="white" />
                 </Pressable>
                 <Pressable
+                  accessibilityLabel="Choose welcome video"
                   onPress={() => handlePickWelcomeMedia("video")}
                   className="h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20"
                 >
@@ -881,7 +884,7 @@ export default function AdminBannerEditorScreen() {
             </Text>
           </Pressable>
           {activeTab === "Banner" && banner.isActive ? (
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={async () => {
                 try {
                   await archiveBanner();

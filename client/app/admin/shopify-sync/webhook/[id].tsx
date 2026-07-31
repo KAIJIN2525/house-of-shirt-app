@@ -30,7 +30,7 @@ export default function AdminShopifyWebhookDetailScreen() {
           No webhook data yet. Run a Shopify sync or return to the sync
           dashboard.
         </Text>
-        <Pressable onPress={() => router.back()} className="mt-6 bg-black px-6 py-4 dark:bg-white">
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} className="mt-6 bg-black px-6 py-4 dark:bg-white">
           <Text className="font-bold text-[10px] tracking-[1.5px] text-white dark:text-black">
             GO BACK
           </Text>
@@ -46,7 +46,7 @@ export default function AdminShopifyWebhookDetailScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={18} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />

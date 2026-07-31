@@ -222,7 +222,7 @@ export default function AdminOrderDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#f4f5f7] dark:bg-[#050505]">
       <View className="flex-row items-center justify-between px-6 pb-4 pt-4 border-b border-neutral-100 dark:border-white/5 bg-white dark:bg-[#0c0d0f]">
-        <Pressable onPress={() => router.navigate("/admin/orders" as any)}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to admin orders" onPress={() => router.navigate("/admin/orders" as any)}>
           <Ionicons
             name="arrow-back"
             size={22}
@@ -232,7 +232,7 @@ export default function AdminOrderDetailScreen() {
         <Text className="font-bold text-[11px] tracking-[1.5px] text-black dark:text-white uppercase">
           ADMIN ORDER CONSOLE
         </Text>
-        <Pressable onPress={handleContactCustomer}>
+        <Pressable accessibilityRole="button" onPress={handleContactCustomer}>
           <Ionicons
             name="call-outline"
             size={20}
@@ -619,7 +619,7 @@ export default function AdminOrderDetailScreen() {
               staff review.
             </Text>
 
-            <TextInput
+            <TextInput accessibilityLabel="e.g. Courier picked up package, but customer requested change in delivery window."
               value={newNote}
               onChangeText={setNewNote}
               multiline
@@ -850,7 +850,7 @@ export default function AdminOrderDetailScreen() {
             <Text className="mt-2 font-normal text-[13px] leading-6 text-neutral-500 dark:text-neutral-400">
               {customAlert?.message}
             </Text>
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() => setCustomAlert(null)}
               className="mt-6 bg-black dark:bg-white py-4 items-center justify-center"
             >

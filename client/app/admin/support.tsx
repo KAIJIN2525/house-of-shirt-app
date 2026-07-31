@@ -105,11 +105,11 @@ export default function AdminSupportScreen() {
     <SafeAreaView className="flex-1 bg-[#f7f9fb] dark:bg-[#050505]">
       {/* Header Bar */}
       <View className="flex-row items-center justify-between px-6 pt-4 pb-2">
-        <Pressable onPress={() => router.navigate("/admin" as any)}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
           <Ionicons name="menu-outline" size={26} color={isDark ? "#fff" : "#000"} />
         </Pressable>
         <BrandLogo width={154} height={28} />
-        <Pressable onPress={() => router.back()}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()}>
           <Ionicons name="log-out-outline" size={24} color={isDark ? "#fff" : "#000"} />
         </Pressable>
       </View>
@@ -124,7 +124,7 @@ export default function AdminSupportScreen() {
         {/* Search & Actions */}
         <View className="px-6 mb-10">
           <View className="flex-row items-center bg-[#ecedf0] dark:bg-[#17191d] px-4 h-14 rounded-sm mb-4">
-            <TextInput
+            <TextInput accessibilityLabel="SEARCH TICKETS..."
               value={searchValue}
               onChangeText={setSearchValue}
               placeholder="SEARCH TICKETS..."
@@ -247,7 +247,7 @@ export default function AdminSupportScreen() {
             </Text>
 
             <Text className="mt-5 font-bold text-[10px] tracking-[1.4px] text-gray-400 uppercase">Title</Text>
-            <TextInput
+            <TextInput accessibilityLabel="e.g. Sleeve length discrepancy"
               value={newTitle}
               onChangeText={setNewTitle}
               placeholder="e.g. Sleeve length discrepancy"
@@ -256,7 +256,7 @@ export default function AdminSupportScreen() {
             />
 
             <Text className="mt-4 font-bold text-[10px] tracking-[1.4px] text-gray-400 uppercase">Description</Text>
-            <TextInput
+            <TextInput accessibilityLabel="Describe the issue..."
               value={newDescription}
               onChangeText={setNewDescription}
               multiline
@@ -267,7 +267,7 @@ export default function AdminSupportScreen() {
             />
 
             <Text className="mt-4 font-bold text-[10px] tracking-[1.4px] text-gray-400 uppercase">Customer Name</Text>
-            <TextInput
+            <TextInput accessibilityLabel="e.g. Julian Vane"
               value={newCustomerName}
               onChangeText={setNewCustomerName}
               placeholder="e.g. Julian Vane"
@@ -276,7 +276,7 @@ export default function AdminSupportScreen() {
             />
 
             <Text className="mt-4 font-bold text-[10px] tracking-[1.4px] text-gray-400 uppercase">Customer Email (optional)</Text>
-            <TextInput
+            <TextInput accessibilityLabel="e.g. julian@example.com"
               value={newCustomerEmail}
               onChangeText={setNewCustomerEmail}
               placeholder="e.g. julian@example.com"
@@ -287,7 +287,7 @@ export default function AdminSupportScreen() {
             />
 
             <Text className="mt-4 font-bold text-[10px] tracking-[1.4px] text-gray-400 uppercase">Order ID (optional)</Text>
-            <TextInput
+            <TextInput accessibilityLabel="e.g. HS-2024-998"
               value={newOrderId}
               onChangeText={setNewOrderId}
               placeholder="e.g. HS-2024-998"
@@ -323,7 +323,7 @@ export default function AdminSupportScreen() {
                   CANCEL
                 </Text>
               </Pressable>
-              <Pressable
+              <Pressable accessibilityRole="button"
                 onPress={() => void handleCreateTicket()}
                 disabled={isSubmitting}
                 className={`flex-1 items-center justify-center bg-[#111826] dark:bg-white py-4 ${isSubmitting ? "opacity-50" : ""}`}

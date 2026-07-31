@@ -39,11 +39,11 @@ export default function AdminBlacklistDetailScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin/blacklist" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to blacklist" onPress={() => router.navigate("/admin/blacklist" as any)}>
             <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin dashboard" onPress={() => router.push("/admin" as any)}>
             <Ionicons name="log-out-outline" size={18} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
         </View>
@@ -109,7 +109,7 @@ export default function AdminBlacklistDetailScreen() {
               </Text>
             </Pressable>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() =>
                 router.push({
                   pathname: "/admin/customer-profile",

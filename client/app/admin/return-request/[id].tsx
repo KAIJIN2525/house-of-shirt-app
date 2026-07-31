@@ -95,11 +95,11 @@ export default function AdminReturnRequestDetailScreen() {
         contentContainerStyle={{ paddingBottom: 36 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin dashboard" onPress={() => router.push("/admin" as any)}>
             <Ionicons name="log-out-outline" size={18} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
         </View>
@@ -255,7 +255,7 @@ export default function AdminReturnRequestDetailScreen() {
             </View>
 
             <View className="mt-5 border border-[#eef1f4] bg-[#fbfbfc] px-4 py-4">
-              <TextInput
+              <TextInput accessibilityLabel="ADD A PRIVATE NOTE..."
                 value={noteDraft}
                 onChangeText={setNoteDraft}
                 multiline
@@ -483,7 +483,7 @@ export default function AdminReturnRequestDetailScreen() {
               </View>
             </View>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() => void processRefund(request.id)}
               className="mt-5 bg-[#eff1f4] px-5 py-4"
             >

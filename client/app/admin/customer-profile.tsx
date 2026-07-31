@@ -189,7 +189,7 @@ export default function AdminCustomerProfileScreen() {
 
         <View className="px-6">
           <View className="flex-row gap-4">
-            <Pressable
+            <Pressable accessibilityLabel="Update customer avatar"
               onPress={handleUpdateAvatar}
               className="relative overflow-hidden"
             >
@@ -356,7 +356,7 @@ export default function AdminCustomerProfileScreen() {
               <Text className="font-bold text-[10px] tracking-[1.8px] text-[#70819b]">
                 RECENT ORDER HISTORY
               </Text>
-              <Pressable onPress={() => router.push("/admin/orders" as any)}>
+              <Pressable accessibilityRole="button" onPress={() => router.push("/admin/orders" as any)}>
                 <Text className="font-bold text-[10px] tracking-[1.8px] text-[#111826]">
                   VIEW ALL
                 </Text>
@@ -511,7 +511,7 @@ export default function AdminCustomerProfileScreen() {
               team has the right context next time.
             </Text>
 
-            <TextInput
+            <TextInput accessibilityLabel="Example: Prefers short lead times and neutral packaging for weekday deliveries."
               value={vipNote}
               onChangeText={setVipNote}
               multiline
@@ -533,7 +533,7 @@ export default function AdminCustomerProfileScreen() {
                   CANCEL
                 </Text>
               </Pressable>
-              <Pressable
+              <Pressable accessibilityRole="button"
                 onPress={handleSaveVipNote}
                 className="flex-1 items-center justify-center bg-[#111826] py-4"
               >

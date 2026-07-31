@@ -61,11 +61,11 @@ export default function AdminAlertsScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin dashboard" onPress={() => router.push("/admin" as any)}>
             <Ionicons name="grid-outline" size={18} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
         </View>
@@ -283,7 +283,7 @@ export default function AdminAlertsScreen() {
           onPress={() => setSelectedOrderId(null)}
           className="flex-1 justify-end bg-black/35"
         >
-          <Pressable className="rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
+          <Pressable accessibilityViewIsModal className="rounded-t-[32px] bg-[#fbfbfc] px-6 pb-8 pt-6">
             <View className="self-center h-1.5 w-16 rounded-full bg-[#d7dbe2]" />
             <Text className="mt-5 font-bold text-[11px] tracking-[1.6px] text-neutral-400">
               ORDER ACTIONS
@@ -295,7 +295,7 @@ export default function AdminAlertsScreen() {
               <View className="mt-6 gap-3">
                 {(["Arrived at Hub", "Out for Delivery", "Delivered"] as const).map(
                   (milestone) => (
-                    <Pressable
+                    <Pressable accessibilityRole="button"
                       key={milestone}
                       onPress={() => {
                         void updateOrderLogisticsStatus(selectedOrder.id, milestone);

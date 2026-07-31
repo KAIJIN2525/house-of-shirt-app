@@ -25,7 +25,7 @@ const MediaTile = memo(function MediaTile({
 }) {
   const { isDark } = useThemeStore();
   return (
-    <Pressable
+    <Pressable accessibilityRole="button"
       onPress={onPress}
       className={`mr-3 w-28 overflow-hidden border ${
         selected

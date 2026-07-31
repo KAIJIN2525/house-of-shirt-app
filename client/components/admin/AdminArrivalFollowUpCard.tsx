@@ -172,7 +172,7 @@ export const AdminArrivalFollowUpCard = memo(
                       </Text>
                     </Pressable>
                   ) : null}
-                  <Pressable
+                  <Pressable accessibilityRole="button"
                     onPress={() => onResolve(order)}
                     className="border border-neutral-200 px-3 py-2 dark:border-white/15"
                   >

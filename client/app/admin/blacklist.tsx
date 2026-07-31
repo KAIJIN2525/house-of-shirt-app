@@ -47,11 +47,11 @@ export default function AdminBlacklistScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons name="arrow-back" size={22} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin/settings" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin settings" onPress={() => router.push("/admin/settings" as any)}>
             <Ionicons name="log-out-outline" size={18} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
         </View>
@@ -68,7 +68,7 @@ export default function AdminBlacklistScreen() {
         <View className="mt-8 px-6">
           <View className="flex-row items-center bg-white px-4 py-4">
             <Ionicons name="search" size={18} color="#98a1ad" />
-            <TextInput
+            <TextInput accessibilityLabel="Search by order, email, or name..."
               value={searchValue}
               onChangeText={setSearchValue}
               placeholder="Search by order, email, or name..."
@@ -139,7 +139,7 @@ export default function AdminBlacklistScreen() {
                           BLACKLISTED
                         </Text>
                       </Pressable>
-                      <Pressable
+                      <Pressable accessibilityRole="button"
                         onPress={() =>
                           router.push({
                             pathname: "/admin/blacklist/[id]",

@@ -401,7 +401,7 @@ export default function AdminScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="relative flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()}>
             <Ionicons
               name="close"
               size={18}
@@ -437,7 +437,7 @@ export default function AdminScreen() {
                 </View>
               ) : null}
             </Pressable>
-            <Pressable onPress={() => router.push("/admin/settings" as any)}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Open admin settings" onPress={() => router.push("/admin/settings" as any)}>
               <Ionicons
                 name="settings-outline"
                 size={18}
@@ -749,7 +749,7 @@ export default function AdminScreen() {
               <Text className="font-bold text-[24px] text-black dark:text-white">
                 Recent Orders
               </Text>
-              <Pressable
+              <Pressable accessibilityRole="button"
                 onPress={() => router.navigate("/admin/orders" as any)}
               >
                 <Text className="font-bold text-[10px] tracking-[1.5px] text-neutral-400">

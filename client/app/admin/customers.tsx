@@ -116,7 +116,7 @@ export default function AdminCustomersScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.navigate("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back to admin dashboard" onPress={() => router.navigate("/admin" as any)}>
             <Ionicons
               name="arrow-back"
               size={22}
@@ -124,7 +124,7 @@ export default function AdminCustomersScreen() {
             />
           </Pressable>
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/admin" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open admin dashboard" onPress={() => router.push("/admin" as any)}>
             <Ionicons
               name="log-out-outline"
               size={18}
@@ -149,7 +149,7 @@ export default function AdminCustomersScreen() {
         <View className="mt-8 px-6">
           <View className="flex-row items-center border border-[#d5d9e0] bg-white px-4 py-4 dark:border-white/10 dark:bg-[#101215]">
             <Ionicons name="search" size={18} color="#9aa1ad" />
-            <TextInput
+            <TextInput accessibilityLabel="Search by name, email or phone..."
               value={searchValue}
               onChangeText={setSearchValue}
               placeholder="Search by name, email or phone..."
@@ -310,7 +310,7 @@ export default function AdminCustomersScreen() {
               ),
             )}
 
-            <Pressable
+            <Pressable accessibilityLabel="Next page" accessibilityRole="button"
               onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               className="h-10 w-10 items-center justify-center bg-white"

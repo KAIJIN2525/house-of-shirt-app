@@ -175,13 +175,13 @@ const BrandManagement = () => {
       <View className="flex-1">
         {/* Header */}
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={isDark ? "#f8fafc" : "#111111"} />
           </Pressable>
           <Text className="font-bold text-[11px] tracking-[2.5px] text-black dark:text-white uppercase">
             Management
           </Text>
-          <Pressable onPress={() => setIsAdding(!isAdding)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={isAdding ? "Close add brand form" : "Add brand"} accessibilityState={{ expanded: isAdding }} onPress={() => setIsAdding(!isAdding)}>
             <Ionicons 
               name={isAdding ? "close-outline" : "add-outline"} 
               size={24} 
@@ -232,7 +232,7 @@ const BrandManagement = () => {
                 <Text className="font-bold text-[9px] tracking-[1px] text-gray-400 mb-2 uppercase">
                   Brand Name
                 </Text>
-                <TextInput
+                <TextInput accessibilityLabel="e.g. NIKE"
                   value={newName}
                   onChangeText={setNewName}
                   placeholder="e.g. NIKE"
@@ -246,13 +246,13 @@ const BrandManagement = () => {
                   <Text className="font-bold text-[9px] tracking-[1px] text-gray-400 uppercase">
                     Brand Domain (Optional)
                   </Text>
-                  <Pressable onPress={handleSearchDomain}>
+                  <Pressable accessibilityRole="button" onPress={handleSearchDomain}>
                     <Text className="font-bold text-[9px] tracking-[1px] text-slate-800 uppercase underline">
                       Find Website
                     </Text>
                   </Pressable>
                 </View>
-                <TextInput
+                <TextInput accessibilityLabel="e.g. nike.com (or leave blank to guess)"
                   value={newDomain}
                   onChangeText={setNewDomain}
                   placeholder="e.g. nike.com (or leave blank to guess)"
@@ -307,7 +307,8 @@ const BrandManagement = () => {
                 </View>
               </View>
               
-              <Pressable 
+              <Pressable accessibilityRole="button"
+                accessibilityLabel={`Delete ${item.name}`}
                 onPress={() => handleDeleteBrand(item.id, item.name)}
                 className="h-10 w-10 items-center justify-center rounded-full bg-red-50"
               >

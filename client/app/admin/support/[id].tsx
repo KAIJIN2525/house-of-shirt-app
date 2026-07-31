@@ -79,13 +79,13 @@ export default function AdminSupportTicketScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#f7f9fb] dark:bg-[#050505]">
       <View className="flex-row items-center justify-between px-6 pt-4 pb-2">
-        <Pressable onPress={() => router.navigate("/admin/support" as any)}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to support inbox" onPress={() => router.navigate("/admin/support" as any)}>
           <Ionicons name="arrow-back" size={24} color={isDark ? "#fff" : "#000"} />
         </Pressable>
         <Text className="font-black text-[14px] tracking-[0.2em] text-black dark:text-white uppercase">
           #{ticket.ticketNumber}
         </Text>
-        <Pressable onPress={() => setIsStatusModalOpen(true)}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Change ticket status" accessibilityState={{ expanded: isStatusModalOpen }} onPress={() => setIsStatusModalOpen(true)}>
           <Ionicons name="ellipsis-horizontal" size={24} color={isDark ? "#fff" : "#000"} />
         </Pressable>
       </View>
@@ -168,7 +168,7 @@ export default function AdminSupportTicketScreen() {
       </ScrollView>
 
       <View className="flex-row items-center gap-3 px-6 py-4 border-t border-gray-200 dark:border-white/10 bg-[#f7f9fb] dark:bg-[#050505]">
-        <TextInput
+        <TextInput accessibilityLabel="Type a reply..."
           value={replyText}
           onChangeText={setReplyText}
           placeholder="Type a reply..."
@@ -177,6 +177,7 @@ export default function AdminSupportTicketScreen() {
           className="flex-1 max-h-24 border border-[#d9dde4] dark:border-neutral-800 bg-white dark:bg-[#101215] px-4 py-3 font-normal text-[13px] text-black dark:text-white"
         />
         <Pressable
+          accessibilityLabel="Send reply"
           onPress={() => void handleSendReply()}
           disabled={isSending || !replyText.trim()}
           className={`items-center justify-center bg-black dark:bg-white px-5 py-4 ${
@@ -220,7 +221,7 @@ export default function AdminSupportTicketScreen() {
                 </Pressable>
               ))}
             </View>
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() => setIsStatusModalOpen(false)}
               className="mt-3 items-center justify-center py-4"
             >

@@ -223,7 +223,7 @@ export default function StaffAccessScreen() {
                 Add the email they use for House of Shirts. Existing accounts
                 activate immediately; new accounts activate after sign-in.
               </Text>
-              <TextInput
+              <TextInput accessibilityLabel="colleague@example.com"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"

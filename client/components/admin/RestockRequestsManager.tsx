@@ -541,7 +541,7 @@ export function RestockRequestsManager() {
   return (
     <SafeAreaView className="flex-1 bg-[#f4f5f7] dark:bg-[#050505]">
       <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-        <Pressable onPress={() => router.back()}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()}>
           <Ionicons
             name="arrow-back"
             size={20}
@@ -551,7 +551,7 @@ export function RestockRequestsManager() {
         <Text className="text-[11px] font-bold tracking-[1.5px] text-black dark:text-white">
           RESTOCK REQUESTS
         </Text>
-        <Pressable onPress={() => void fetchRequests()}>
+        <Pressable accessibilityLabel="Refresh" accessibilityRole="button" onPress={() => void fetchRequests()}>
           <Ionicons name="refresh" size={18} color={isDark ? "#fff" : "#111"} />
         </Pressable>
       </View>
