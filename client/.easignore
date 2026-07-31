@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Expo output and local state
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Generated native projects
+/ios
+/android
+.kotlin/
+
+# Local development and agent tooling
+.agents/
+.claude/
+.agents
+.claude
+**/.agents/**
+**/.claude/**
+.vscode/
+
+# Local environment files (build values are configured in EAS)
+.env
+.env.*
+!.env.example
+
+# Credentials and signing artifacts
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Logs, caches, and OS metadata
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.tsbuildinfo
+
+# Project-local generated/archived content
+app-example/

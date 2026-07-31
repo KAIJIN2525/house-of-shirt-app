@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "54107816008",
+    "project_id": "house-of-shirts",
+    "storage_bucket": "house-of-shirts.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:54107816008:android:3d984888eca7c2ad07987d",
+        "android_client_info": {
+          "package_name": "com.houseofshirt.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKXYW3kzz6D7sMT1M-QlHba869MFNPpJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

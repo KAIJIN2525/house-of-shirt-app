@@ -1,43 +1,86 @@
 {
   "expo": {
-    "name": "",
+    "name": "House of Shirts",
     "slug": "house-of-shirt",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/house_of_shirt.png",
-    "scheme": "houseofshirt",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/images/house_of_shirt2_icon.png",
+    "scheme": [
+      "houseofshirt",
+      "shop.91713536318.app"
+    ],
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.houseofshirt.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "icon": "./assets/images/house_of_shirt.png",
+      "icon": "./assets/images/house_of_shirt2_icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/house_of_shirt2_icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "package": "com.houseofshirt.app",
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/images/house_of_shirt2_icon.png",
       "bundler": "metro"
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/house_of_shirt.png",
+          "image": "./assets/images/house_of_shirt2.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/FuturaCyrillicLight.ttf",
+            "./assets/fonts/FuturaCyrillicBook.ttf",
+            "./assets/fonts/FuturaCyrillicMedium.ttf",
+            "./assets/fonts/FuturaCyrillicDemi.ttf",
+            "./assets/fonts/FuturaCyrillicBold.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "House of Shirts needs access to your gallery so admins can upload banner artwork.",
+          "cameraPermission": "House of Shirts needs camera access when capturing banner artwork.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-web-browser",
+      "@react-native-community/datetimepicker",
+      "expo-video",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3713294f-84be-4d3b-8ba0-3f33614380dc"
+      }
+    },
+    "owner": "ashura01"
   }
 }

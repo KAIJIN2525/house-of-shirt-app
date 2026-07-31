@@ -41,3 +41,11 @@ app-example
 # generated native folders
 /ios
 /android
+
+# local agent tooling (excluded from EAS archives)
+.agents/
+.claude/
+.vscode/
+.env
+.env.*
+!.env.example

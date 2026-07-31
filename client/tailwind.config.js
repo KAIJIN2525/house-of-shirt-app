@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: "class",
   // NOTE: Update this to include the paths to all of your component files.
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
@@ -18,11 +19,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        futura: ["Futura-Book"],
-        "futura-light": ["Futura-Light"],
-        "futura-medium": ["Futura-Medium"],
-        "futura-demi": ["Futura-Demi"],
-        "futura-bold": ["Futura-Bold"],
+        sans: ["Lexend"],
       },
     },
   },

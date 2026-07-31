@@ -3,7 +3,12 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    font-family: Futura-Book;
+  html {
+    font-family: "Lexend", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #0f172a;
+  }
+
+  .dark {
+    color: #f8fafc;
   }
 }
