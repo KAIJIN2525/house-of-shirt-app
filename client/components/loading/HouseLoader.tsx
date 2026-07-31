@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Image, View } from "react-native";
 import { AppText as Text } from "@/components/AppText";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const loaderLogo = require("../../assets/images/house_of_shirt2.png");
 
@@ -19,8 +20,17 @@ export function HouseLoader({
 }: HouseLoaderProps) {
   const progress = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      progress.stopAnimation();
+      pulse.stopAnimation();
+      progress.setValue(0.5);
+      pulse.setValue(1);
+      return;
+    }
+
     const progressLoop = Animated.loop(
       Animated.timing(progress, {
         toValue: 1,
@@ -53,7 +63,7 @@ export function HouseLoader({
       progressLoop.stop();
       pulseLoop.stop();
     };
-  }, [progress, pulse]);
+  }, [progress, pulse, reduceMotion]);
 
   const translateX = progress.interpolate({
     inputRange: [0, 1],
@@ -66,6 +76,11 @@ export function HouseLoader({
 
   return (
     <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${label}. Please wait.`}
+      accessibilityLiveRegion="polite"
+      accessibilityState={{ busy: true }}
       className={
         fullscreen
           ? "flex-1 items-center justify-center bg-white px-8 dark:bg-[#050505]"
@@ -85,6 +100,7 @@ export function HouseLoader({
           <Image
             source={loaderLogo}
             resizeMode="contain"
+            accessible={false}
             className="h-full w-full"
           />
         </View>

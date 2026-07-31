@@ -89,7 +89,7 @@ const SignUp = () => {
 
             {/* Error Message */}
             {error ? (
-              <View className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <View accessibilityRole="alert" accessibilityLiveRegion="assertive" className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
                 <Text className="font-medium text-red-600 text-sm">
                   {error}
                 </Text>
@@ -110,6 +110,7 @@ const SignUp = () => {
                   className="h-12 border border-gray-300 rounded-lg px-4 font-normal"
                   style={{ paddingVertical: 0 }}
                   autoCapitalize="words"
+                  accessibilityLabel="Full name"
                 />
               </View>
 
@@ -127,6 +128,7 @@ const SignUp = () => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
+                  accessibilityLabel="Email address"
                 />
               </View>
 
@@ -144,9 +146,12 @@ const SignUp = () => {
                     className="h-12 border border-gray-300 rounded-lg px-4 pr-12 font-normal"
                     style={{ paddingVertical: 0 }}
                     autoCapitalize="none"
+                    accessibilityLabel="Password"
                   />
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-4 top-3"
                   >
                     <Ionicons
@@ -172,6 +177,7 @@ const SignUp = () => {
                     className="h-12 border border-gray-300 rounded-lg px-4 pr-12 font-normal"
                     style={{ paddingVertical: 0 }}
                     autoCapitalize="none"
+                    accessibilityLabel="Password"
                   />
                   <Pressable
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -193,6 +199,8 @@ const SignUp = () => {
             <Pressable
               onPress={handleSignUp}
               disabled={loading}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: loading, busy: loading }}
               className={`h-16 items-center justify-center mb-6 overflow-hidden ${
                 loading ? "opacity-50" : ""
               }`}
@@ -223,6 +231,9 @@ const SignUp = () => {
               <Pressable
                 onPress={handleGoogleSignIn}
                 disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel="Continue with Google"
+                accessibilityState={{ disabled: loading, busy: loading }}
                 className="flex-1 h-12 border border-gray-300 rounded-lg flex-row items-center justify-center gap-2"
               >
                 <Ionicons name="logo-google" size={20} color="#EA4335" />

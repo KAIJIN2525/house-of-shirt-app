@@ -1,8 +1,9 @@
-import { View, TouchableOpacity, StyleSheet, Animated, Platform } from "react-native";
+import { View, Pressable, StyleSheet, Animated, Platform } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { colors } from "@/constants/index";
 import { useEffect, useRef } from "react";
 import { useThemeStore } from "@/stores/themeStore";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export function CustomTabBar({
   state,
@@ -54,18 +55,25 @@ export function CustomTabBar({
 
 function TabButton({ route, isFocused, onPress, options, isDark }: any) {
   const translateY = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     Animated.spring(translateY, {
-      toValue: isFocused ? -35 : 0,
+      toValue: isFocused && !reduceMotion ? -35 : 0,
       useNativeDriver: true,
       damping: 15,
       stiffness: 150,
     }).start();
-  }, [isFocused, translateY]);
+  }, [isFocused, reduceMotion, translateY]);
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.tab} activeOpacity={0.7}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.tab, pressed ? styles.pressed : undefined]}
+      accessibilityRole="tab"
+      accessibilityLabel={options.tabBarAccessibilityLabel ?? options.title ?? route.name}
+      accessibilityState={{ selected: isFocused }}
+    >
       <Animated.View
         style={[
           styles.iconContainer,
@@ -81,7 +89,7 @@ function TabButton({ route, isFocused, onPress, options, isDark }: any) {
           size: 24,
         })}
       </Animated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -110,6 +118,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#0f1115",
     shadowColor: "#000",
     shadowOpacity: 0.35,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   tab: {
     flex: 1,

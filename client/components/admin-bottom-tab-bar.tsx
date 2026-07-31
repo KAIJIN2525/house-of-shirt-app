@@ -1,9 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useThemeStore } from "@/stores/themeStore";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Pressable, StyleSheet, View, Animated, TouchableOpacity, Platform } from "react-native";
+import { Pressable, StyleSheet, View, Animated, Platform } from "react-native";
 import React, { useEffect, useRef } from "react";
-import { colors } from "@/constants/index";
 
 export function AdminBottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const {  isDark  } = useThemeStore();
@@ -35,6 +34,7 @@ export function AdminBottomTabBar({ state, descriptors, navigation }: BottomTabB
           return (
             <AdminTabButton
               key={route.key}
+              route={route}
               isFocused={isFocused}
               onPress={onPress}
               options={options}
@@ -47,20 +47,27 @@ export function AdminBottomTabBar({ state, descriptors, navigation }: BottomTabB
   );
 }
 
-function AdminTabButton({ isFocused, onPress, options, isDark }: any) {
+function AdminTabButton({ route, isFocused, onPress, options, isDark }: any) {
   const translateY = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     Animated.spring(translateY, {
-      toValue: isFocused ? -35 : 0,
+      toValue: isFocused && !reduceMotion ? -35 : 0,
       useNativeDriver: true,
       damping: 15,
       stiffness: 150,
     }).start();
-  }, [isFocused, translateY]);
+  }, [isFocused, reduceMotion, translateY]);
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.tab} activeOpacity={0.7}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.tab, pressed ? styles.pressed : undefined]}
+      accessibilityRole="tab"
+      accessibilityLabel={options.tabBarAccessibilityLabel ?? options.title ?? route.name}
+      accessibilityState={{ selected: isFocused }}
+    >
       <Animated.View
         style={[
           styles.iconWrap,
@@ -76,7 +83,7 @@ function AdminTabButton({ isFocused, onPress, options, isDark }: any) {
           size: 24,
         })}
       </Animated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -105,6 +112,9 @@ const styles = StyleSheet.create({
   },
   tabBarDark: {
     backgroundColor: "#111317",
+  },
+  pressed: {
+    opacity: 0.7,
   },
   tab: {
     flex: 1,

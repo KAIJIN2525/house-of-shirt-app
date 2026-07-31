@@ -12,7 +12,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Customer tabs: Home, Shop, Bag, Favorites, Profile.
 - [x] Full in-app administration route group.
 - [ ] Add unit, integration, and end-to-end tests plus CI checks.
-- [ ] Complete accessibility review: screen readers, focus, contrast, dynamic text, and reduced motion.
+- [x] Added an accessibility foundation for shared customer/admin tabs, authentication forms, loading announcements, and OS reduced-motion preferences.
+- [ ] Complete the remaining screen-by-screen accessibility review: labels, focus, contrast, dynamic text, and touch targets.
 - [x] Removed unused Expo starter assets/scripts and bundled fake order/return records; normalized the public brand to “House of Shirts.”
 
 ## Authentication and accounts
