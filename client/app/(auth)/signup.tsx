@@ -12,40 +12,25 @@ import React, { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/stores/authStore";
-import { hasSupabaseConfig } from "@/constants/keys";
 import "../../global.css";
 import { LinearGradient } from "expo-linear-gradient";
 
-const Login = () => {
+const SignUp = () => {
   const router = useRouter();
-  const signInWithEmail = useAuthStore((state) => state.signInWithEmail);
+  const signUpWithEmail = useAuthStore((state) => state.signUpWithEmail);
   const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async () => {
+  const handleSignUp = async () => {
     setError("");
-
-    if (!email || !password) {
-      setError("Please fill in all fields");
-      return;
-    }
-
     setLoading(true);
 
-    if (!hasSupabaseConfig()) {
-      // Fallback: no Supabase configured, simulate login
-      setTimeout(() => {
-        setLoading(false);
-        router.replace("/(tabs)");
-      }, 1500);
-      return;
-    }
-
-    const { error: authError } = await signInWithEmail(email, password);
+    const { error: authError } = await signUpWithEmail(email, password, name);
     setLoading(false);
 
     if (authError) {
@@ -95,8 +80,11 @@ const Login = () => {
               </Text>
             </View>
 
-            <Text className="font-bold text-gray-900 mb-8 text-4xl">
-              Welcome back!
+            <Text className="font-bold text-black text-center text-5xl mb-8">
+              Join the Atelier
+            </Text>
+            <Text className="font-normal text-gray-500 text-center text-lg mb-8">
+              Step into a world of premium fashion and timeless style.
             </Text>
 
             {/* Error Message */}
@@ -110,16 +98,31 @@ const Login = () => {
 
             {/* Form Inputs */}
             <View className="gap-4 mb-6">
+              {/* Name Input */}
+              <View>
+                <Text className="font-medium uppercase text-slate-900 mb-2 text-sm">
+                  Full Name
+                </Text>
+                <TextInput
+                  placeholder="ALEXANDER VANE"
+                  value={name}
+                  onChangeText={setName}
+                  className="h-12 border border-gray-300 rounded-lg px-4 font-normal"
+                  style={{ paddingVertical: 0 }}
+                  autoCapitalize="words"
+                />
+              </View>
+
               {/* Email Input */}
               <View>
                 <Text className="font-medium uppercase text-slate-900 mb-2 text-sm">
-                  Email Address
+                  Email
                 </Text>
                 <TextInput
-                  placeholder="your.email@example.com"
+                  placeholder="atelier@houseofshirts.com"
                   value={email}
                   onChangeText={setEmail}
-                  className="h-14 border border-gray-300 rounded-lg px-4 font-normal"
+                  className="h-12 border border-gray-300 rounded-lg px-4 font-normal"
                   style={{ paddingVertical: 0 }}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -129,7 +132,7 @@ const Login = () => {
 
               {/* Password Input */}
               <View>
-                <Text className="font-medium text-slate-900 uppercase mb-2 text-sm">
+                <Text className="font-medium uppercase text-slate-900 mb-2 text-sm">
                   Password
                 </Text>
                 <View className="relative">
@@ -138,7 +141,7 @@ const Login = () => {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
-                    className="h-14 border border-gray-300 rounded-lg px-4 pr-12 font-normal"
+                    className="h-12 border border-gray-300 rounded-lg px-4 pr-12 font-normal"
                     style={{ paddingVertical: 0 }}
                     autoCapitalize="none"
                   />
@@ -154,21 +157,41 @@ const Login = () => {
                   </Pressable>
                 </View>
               </View>
+
+              {/* Confirm Password Input */}
+              {/* <View>
+                <Text className="font-medium text-slate-900 mb-2 text-sm">
+                  Confirm Password
+                </Text>
+                <View className="relative">
+                  <TextInput
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                    className="h-12 border border-gray-300 rounded-lg px-4 pr-12 font-normal"
+                    style={{ paddingVertical: 0 }}
+                    autoCapitalize="none"
+                  />
+                  <Pressable
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-3"
+                  >
+                    <Ionicons
+                      name={
+                        showConfirmPassword ? "eye-off-outline" : "eye-outline"
+                      }
+                      size={20}
+                      color="#64748b"
+                    />
+                  </Pressable>
+                </View>
+              </View> */}
             </View>
 
-            {/* Forgot Password */}
+            {/* Sign Up Button */}
             <Pressable
-              onPress={() => router.push("/(auth)/forgot-password" as any)}
-              className="mb-6"
-            >
-              <Text className="font-medium text-slate-900 text-right text-sm">
-                Forgot Password?
-              </Text>
-            </Pressable>
-
-            {/* Sign In Button */}
-            <Pressable
-              onPress={handleLogin}
+              onPress={handleSignUp}
               disabled={loading}
               className={`h-16 items-center justify-center mb-6 overflow-hidden ${
                 loading ? "opacity-50" : ""
@@ -181,13 +204,13 @@ const Login = () => {
                 className="flex-1 w-full items-center justify-center"
               >
                 <Text className="font-semibold text-white text-base tracking-widest">
-                  {loading ? "SIGNING IN ..." : "SIGN IN"}
+                  {loading ? "CREATING ACCOUNT ..." : "CREATE ACCOUNT"}
                 </Text>
               </LinearGradient>
             </Pressable>
 
             {/* Divider */}
-            <View className="flex-row items-center mb-6 my-8">
+            <View className="flex-row items-center mb-6">
               <View className="flex-1 h-px bg-gray-300" />
               <Text className="font-normal text-gray-500 mx-4 text-sm">
                 Or continue with
@@ -209,13 +232,25 @@ const Login = () => {
               </Pressable>
             </View>
 
-            {/* Sign Up Link */}
+            {/* Terms & Conditions */}
+            <Text className="font-normal text-gray-500 text-center text-xs mb-8">
+              By signing up, you agree to our{" "}
+              <Text className="font-medium text-slate-900">
+                Terms & Conditions
+              </Text>{" "}
+              and{" "}
+              <Text className="font-medium text-slate-900">
+                Privacy Policy
+              </Text>
+            </Text>
+
+            {/* Login Link */}
             <View className="flex-row justify-center items-center gap-1">
               <Text className="font-normal text-gray-600">
-                Don&apos;t have an account?
+                Already have an account?
               </Text>
-              <Pressable onPress={() => router.push("/(auth)/signup" as any)}>
-                <Text className="font-semibold text-slate-900">Sign Up</Text>
+              <Pressable onPress={() => router.push("/(auth)/login" as any)}>
+                <Text className="font-semibold text-slate-900">Sign In</Text>
               </Pressable>
             </View>
           </View>
@@ -225,4 +260,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;

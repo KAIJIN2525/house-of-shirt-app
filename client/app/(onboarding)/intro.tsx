@@ -1,4 +1,6 @@
+import { useAdminContentStore } from "@/stores/adminContentStore";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useRef, useState } from "react";
 import {
   Animated,
@@ -6,49 +8,21 @@ import {
   FlatList,
   Image,
   Pressable,
-  Text,
   View,
 } from "react-native";
+import { AppText as Text } from "@/components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 
 const { width } = Dimensions.get("window");
 
-interface IntroSlide {
-  id: string;
-  title: string;
-  subtitle: string;
-  image: string;
-}
-
-const INTRO_SLIDES: IntroSlide[] = [
-  {
-    id: "1",
-    title: "Discover something new",
-    subtitle: "Explore new products just for you",
-    image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400",
-  },
-  {
-    id: "2",
-    title: "Update trendy outfit",
-    subtitle: "Find the hottest and trendiest outfits",
-    image: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=400",
-  },
-  {
-    id: "3",
-    title: "Explore your true style",
-    subtitle: "Relax and let us bring the fashion to you",
-    image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400",
-  },
-];
-
 const Intro = () => {
   const router = useRouter();
+  const {  intro  } = useAdminContentStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-
   const dotAnimations = useRef(
-    INTRO_SLIDES.map(() => new Animated.Value(0))
+    (intro?.slides ?? []).map(() => new Animated.Value(0)),
   ).current;
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -68,8 +42,17 @@ const Intro = () => {
     }
   }).current;
 
+  // Safety check: if intro or slides are missing, don't crash
+  if (!intro || !intro.slides) {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center">
+        <Text>Loading onboarding...</Text>
+      </SafeAreaView>
+    );
+  }
+
   const handleNext = () => {
-    if (currentIndex < INTRO_SLIDES.length - 1) {
+    if (currentIndex < intro.slides.length - 1) {
       flatListRef.current?.scrollToIndex({
         index: currentIndex + 1,
         animated: true,
@@ -85,84 +68,111 @@ const Intro = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Skip Button */}
-      <View className="absolute top-8 right-4 z-10">
-        <Pressable onPress={handleSkip} className="px-4 py-2">
-          <Text className="font-futura-medium text-gray-500">Skip</Text>
-        </Pressable>
-      </View>
-
       <FlatList
         ref={flatListRef}
-        data={INTRO_SLIDES}
+        data={intro.slides}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
         keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <View style={{ width }} className="flex-1 px-6">
-            {/* Top Section - Title & Subtitle */}
-            <View className="pt-16 px-4">
-              <Text className="font-futura-bold text-2xl text-slate-900 text-center mb-2">
-                {item.title}
+        scrollEventThrottle={16}
+        renderItem={({ item }) => (
+          <View style={{ width }} className="flex-1 bg-white">
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-6 pt-4 pb-2">
+              <Text className="font-bold text-black text-lg tracking-widest">
+                HOUSE OF SHIRTS
               </Text>
-              <Text className="font-futura text-gray-600 text-center text-base">
+              <Pressable onPress={handleSkip}>
+                <Text className="font-normal text-gray-600 text-xs tracking-widest">
+                  SKIP
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Image Section */}
+            <View className="relative">
+              <View className="h-80 items-center justify-center px-6 py-4">
+                <View className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+                  <Image
+                    source={{ uri: item.image }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                </View>
+              </View>
+
+              {/* Badge */}
+              <View className="px-6 pb-6 absolute bottom-1 left-3">
+                <View className="bg-black px-3 py-2 self-start rounded">
+                  <Text className="font-semibold text-white text-xs tracking-[3px]">
+                    {item.badge}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Content Section */}
+            <View className="flex-1 px-6 pb-8 mt-4">
+              <Text className="font-normal text-gray-500 text-xs tracking-[3px] mb-3">
                 {item.subtitle}
               </Text>
-            </View>
 
-            {/* Middle Section - Product Image */}
-            <View className="flex-1 items-center justify-center py-12">
-              <View className="w-72 h-96 bg-gray-50 rounded-3xl overflow-hidden shadow-lg">
-                <Image
-                  source={{ uri: item.image }}
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
-              </View>
-            </View>
+              <Text className="font-bold text-black text-5xl leading-tight mb-4">
+                {item.title}
+              </Text>
 
-            {/* Bottom Section - Dots & Button */}
-            <View className="pb-8 px-4">
+              <Text className="font-normal text-gray-600 text-lg leading-relaxed mb-8">
+                {item.description}
+              </Text>
+
               {/* Pagination Dots */}
-              <View className="flex-row justify-center items-center gap-1.5 mb-8">
-                {INTRO_SLIDES.map((_, idx) => {
-                  const dotWidth = dotAnimations[idx].interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [8, 24],
-                  });
-
-                  const dotOpacity = dotAnimations[idx].interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.3, 1],
-                  });
-
-                  return (
-                    <Animated.View
-                      key={idx}
-                      style={{
-                        width: dotWidth,
-                        opacity: dotOpacity,
-                        height: 8,
-                        borderRadius: 4,
-                        backgroundColor: "#0f172a",
-                      }}
-                    />
-                  );
-                })}
+              <View className="flex-row items-center my-6 gap-2 ">
+                {intro.slides.map((_, idx) => (
+                  <Animated.View
+                    key={idx}
+                    style={{
+                      width: dotAnimations[idx].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [8, 8],
+                      }),
+                      opacity: dotAnimations[idx].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.3, 1],
+                      }),
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: "#000",
+                    }}
+                  />
+                ))}
               </View>
 
-              {/* Action Button */}
+              {/* Get Started Button */}
+              <Pressable onPress={handleNext} className="mb-3">
+                <LinearGradient
+                  colors={["#000000", "#1a1a1a"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="py-6 items-center rounded"
+                >
+                  <Text className="font-semibold text-white text-sm tracking-widest">
+                    {currentIndex === intro.slides.length - 1
+                      ? "GET STARTED"
+                      : "NEXT"}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+
+              {/* Login Button */}
               <Pressable
-                onPress={handleNext}
-                className="bg-slate-900 py-4 rounded-full items-center shadow-md"
+                onPress={handleSkip}
+                className="py-6 border-2 border-black items-center rounded"
               >
-                <Text className="font-futura-demi text-white text-base">
-                  {currentIndex === INTRO_SLIDES.length - 1
-                    ? "Get Started"
-                    : "Continue"}
+                <Text className="font-semibold text-black text-sm tracking-widest">
+                  LOGIN
                 </Text>
               </Pressable>
             </View>
