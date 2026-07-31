@@ -110,7 +110,7 @@ export interface ShopifySyncLog {
   id: string;
   startedAt: string;
   completedAt: string;
-  status: "Success" | "Warning";
+  status: "Success" | "Warning" | "Failed";
   ordersImported: number;
   customersImported: number;
   productsImported: number;
@@ -504,21 +504,45 @@ const useAdminContentStoreBase = create<AdminContentState>()(
               completedAt: l.completed_at
                 ? new Date(l.completed_at).toLocaleString()
                 : "",
-              status: l.status as any,
+              status: l.status as ShopifySyncLog["status"],
               ordersImported: l.orders_imported,
               customersImported: l.customers_imported,
               productsImported: l.products_imported,
               summary: l.summary || "",
             }));
+            const latestLog = data[0] ?? null;
+            const lastSuccessfulLog = data.find(
+              (log: any) => log.status === "Success" && log.completed_at,
+            );
+            const lastSuccessAt = lastSuccessfulLog?.completed_at
+              ? new Date(lastSuccessfulLog.completed_at)
+              : null;
+            const isStale =
+              !lastSuccessAt ||
+              Date.now() - lastSuccessAt.getTime() > 2 * 60 * 60 * 1000;
+            const latestFailed =
+              latestLog && latestLog.status !== "Success";
+            const warningActive = Boolean(isStale || latestFailed);
+            const warningTitle = latestFailed
+              ? `LATEST SYNC ${String(latestLog.status).toUpperCase()}`
+              : "SHOPIFY SYNC IS STALE";
+            const warningMessage = latestFailed
+              ? latestLog.error_message || latestLog.summary || "The latest Shopify sync needs attention."
+              : lastSuccessAt
+                ? `The last successful sync was ${lastSuccessAt.toLocaleString()}.`
+                : "No successful Shopify synchronization has been recorded.";
 
             set((state) => ({
               shopifySyncLogs: logs,
               shopifySync: {
                 ...state.shopifySync,
-                lastSuccessfulSync:
-                  logs.length > 0
-                    ? logs[0].completedAt || logs[0].startedAt
-                    : state.shopifySync.lastSuccessfulSync,
+                warningActive,
+                warningTitle,
+                warningMessage,
+                syncingInRealtime: !warningActive,
+                lastSuccessfulSync: lastSuccessAt
+                  ? lastSuccessAt.toLocaleString()
+                  : "Never",
               },
             }));
           }

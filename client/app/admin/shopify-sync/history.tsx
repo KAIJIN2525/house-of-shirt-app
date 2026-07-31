@@ -48,7 +48,11 @@ export default function AdminShopifySyncHistoryScreen() {
               <View className="flex-row items-center justify-between">
                 <Text
                   className={`font-bold text-[11px] tracking-[1.4px] ${
-                    log.status === "Success" ? "text-[#42a85f]" : "text-[#c98a24]"
+                    log.status === "Success"
+                      ? "text-[#42a85f]"
+                      : log.status === "Failed"
+                        ? "text-[#ef4444]"
+                        : "text-[#c98a24]"
                   }`}
                 >
                   {log.status.toUpperCase()}

@@ -89,7 +89,7 @@ export default function AdminShopifySyncScreen() {
       try {
         const status = await getShopifySyncStatus();
         await hydrateRemoteStatus(status);
-      } catch (e) {}
+      } catch {}
     }
     setRefreshing(false);
   }, [fetchAllData, hydrateRemoteStatus]);
@@ -208,6 +208,17 @@ export default function AdminShopifySyncScreen() {
       if (hasShopifySyncApiConfig()) {
         const remoteResult = await runRemoteShopifySync();
         await applySyncResult(remoteResult);
+        await fetchSyncLogs();
+        if (remoteResult.status && remoteResult.status !== "Success") {
+          const message =
+            remoteResult.message || "Shopify sync completed with warnings.";
+          showToast({
+            message,
+            type: remoteResult.status === "Failed" ? "error" : "info",
+          });
+          setSyncModeMessage(`Shopify sync ${remoteResult.status.toLowerCase()}. ${message}`);
+          return;
+        }
         showToast({
           message: "Live Shopify sync completed successfully.",
           type: "success",
@@ -230,6 +241,7 @@ export default function AdminShopifySyncScreen() {
 
   // Determine active status configurations
   const isFailed =
+    safeShopifySync.warningActive ||
     syncModeMessage.includes("failed") ||
     syncModeMessage.includes("unavailable") ||
     syncModeMessage.includes("Invalid JWT") ||

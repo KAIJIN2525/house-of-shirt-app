@@ -86,7 +86,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [ ] Configure production app credentials and webhook subscriptions.
 - [x] Verified webhook HMAC, persistent delivery replay protection/deduplication, and Vault-backed scheduled-job authentication.
 - [x] Prevented stale or out-of-order Shopify webhook deliveries from regressing newer order state using monotonic Shopify event timestamps.
-- [ ] Add stale-data/failure alerting and load-test large catalogues/order histories.
+- [x] Added deduplicated Shopify sync failure incidents, stale-sync monitoring, admin alerts, and automatic recovery resolution.
+- [ ] Load-test large Shopify catalogues and order histories.
 
 ## Admin and content management
 

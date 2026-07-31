@@ -370,25 +370,79 @@ const dedupeProducts = (products: ShopifyProduct[]) => {
   return Array.from(deduped.values());
 };
 
+type SyncStatus = "Success" | "Warning" | "Failed";
+
 const insertSyncLog = async (
   supabase: ReturnType<typeof createClient>,
   productsImported: number,
   customersImported: number,
   ordersImported: number,
   summary: string,
+  status: SyncStatus,
+  errorMessage: string | null = null,
+  startedAt = new Date().toISOString(),
 ) => {
   const { error } = await supabase.from("sync_logs").insert({
-    started_at: new Date().toISOString(),
+    started_at: startedAt,
     completed_at: new Date().toISOString(),
-    status: "Success",
+    status,
     products_imported: productsImported,
     customers_imported: customersImported,
     orders_imported: ordersImported,
     summary,
+    error_message: errorMessage,
+    metadata: { monitored: true },
   });
 
   if (error) {
     console.warn("Unable to write sync log:", error.message);
+  }
+};
+
+const updateSyncIncident = async (
+  supabase: ReturnType<typeof createClient>,
+  active: boolean,
+  status: SyncStatus,
+  message: string,
+) => {
+  const { data: shouldNotify, error: incidentError } = await supabase.rpc(
+    "record_integration_incident",
+    {
+      p_incident_key: "shopify_sync_failed",
+      p_integration: "shopify",
+      p_active: active,
+      p_severity: status === "Failed" ? "critical" : "warning",
+      p_title: active ? "Shopify sync needs attention" : "Shopify sync recovered",
+      p_message: message,
+    },
+  );
+  if (incidentError) {
+    console.warn("Unable to update Shopify sync incident:", incidentError.message);
+    return;
+  }
+  if (!active || !shouldNotify) return;
+
+  const { data: admins, error: adminsError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("is_admin", true);
+  if (adminsError || !admins?.length) return;
+
+  const { error: notificationError } = await supabase
+    .from("app_notifications")
+    .insert(
+      admins.map((admin: { id: string }) => ({
+        user_id: admin.id,
+        title: "Shopify sync needs attention",
+        message,
+        label: "SYNC ALERT",
+        icon: "warning-outline",
+        target_type: "shopify_sync",
+        target_value: "history",
+      })),
+    );
+  if (notificationError) {
+    console.warn("Unable to create Shopify sync alert:", notificationError.message);
   }
 };
 
@@ -924,6 +978,7 @@ Deno.serve(async (req) => {
     const storeDomain = getEnv("SHOPIFY_STORE_DOMAIN");
     const accessToken = getEnv("SHOPIFY_ACCESS_TOKEN");
 
+    const syncStartedAt = new Date().toISOString();
     console.log(`Starting Full Shopify sync for ${storeDomain}`);
 
     let productsCount = 0;
@@ -931,6 +986,7 @@ Deno.serve(async (req) => {
     let ordersCount = 0;
     let productSchemaUsed = "none";
     const logDetails: string[] = [];
+    let failedStages = 0;
 
     // 1. Fetch Orders and Compute Sales Tally
     let orders: ShopifyOrder[] = [];
@@ -950,6 +1006,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.warn("Order fetch failed:", e.message);
       logDetails.push(`Orders fetch failed: ${e.message}`);
+      failedStages += 1;
     }
 
     // 2. Sync Products
@@ -980,10 +1037,12 @@ Deno.serve(async (req) => {
             : "Unknown restock notification error";
         console.warn("Back-in-stock notification check failed:", message);
         logDetails.push(`Restock notifications failed: ${message}`);
+        failedStages += 1;
       }
     } catch (e) {
       console.warn("Product sync failed:", e.message);
       logDetails.push(`Products failed: ${e.message}`);
+      failedStages += 1;
     }
 
     // 3. Sync Customers
@@ -998,6 +1057,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.warn("Customer sync failed:", e.message);
       logDetails.push(`Customers failed: ${e.message}`);
+      failedStages += 1;
     }
 
     // 4. Upsert Orders
@@ -1008,24 +1068,43 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.warn("Order sync failed:", e.message);
         logDetails.push(`Orders failed: ${e.message}`);
+        failedStages += 1;
       }
     }
 
     // 4. Log the result
     const supabase = createClient(supabaseUrl, serviceRoleKey);
     const summary = logDetails.join(", ");
+    const status: SyncStatus = failedStages === 0
+      ? "Success"
+      : failedStages >= 3
+        ? "Failed"
+        : "Warning";
+    const syncMessage = `Sync result: ${summary}`;
     await insertSyncLog(
       supabase,
       productsCount,
       customersCount,
       ordersCount,
-      `Sync result: ${summary}`,
+      syncMessage,
+      status,
+      failedStages > 0 ? summary : null,
+      syncStartedAt,
+    );
+    await updateSyncIncident(
+      supabase,
+      failedStages > 0,
+      status,
+      failedStages > 0
+        ? `Shopify sync completed with ${failedStages} failed stage${failedStages === 1 ? "" : "s"}. ${summary}`
+        : "Shopify synchronization is healthy again.",
     );
 
-    console.log(`Sync complete: ${summary}`);
+    console.log(`Sync complete (${status}): ${summary}`);
 
     return jsonResponse({
-      success: true,
+      success: failedStages === 0,
+      status,
       counts: {
         products: productsCount,
         customers: customersCount,
@@ -1039,6 +1118,28 @@ Deno.serve(async (req) => {
     const message =
       error instanceof Error ? error.message : "Unknown sync error";
     console.error("Shopify sync failed:", message);
-    return jsonResponse({ error: message }, 400);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+    if (supabaseUrl && serviceRoleKey) {
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      await insertSyncLog(
+        supabase,
+        0,
+        0,
+        0,
+        `Shopify sync failed: ${message}`,
+        "Failed",
+        message,
+      );
+      await updateSyncIncident(
+        supabase,
+        true,
+        "Failed",
+        `Shopify synchronization failed before completion. ${message}`,
+      );
+    }
+
+    return jsonResponse({ error: message }, 500);
   }
 });

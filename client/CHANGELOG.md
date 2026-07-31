@@ -39,6 +39,7 @@ All notable changes to House of Shirts should be recorded here. This file follow
 - Restored Shopify webhook HMAC verification and removed the predictable notification test-bypass fallback.
 - Added persistent Shopify webhook delivery deduplication with safe retry recovery and idempotent order upserts.
 - Prevented delayed Shopify events from overwriting newer order state across webhooks, scheduled sync, and admin refreshes.
+- Added monitored Shopify sync outcomes, deduplicated admin incidents, stale-sync checks, and automatic incident recovery.
 
 ### Known limitations
 

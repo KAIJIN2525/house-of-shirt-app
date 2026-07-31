@@ -53,7 +53,7 @@ export interface ShopifyRemoteSyncLog {
   id: string;
   startedAt: string;
   completedAt: string;
-  status: "Success" | "Warning";
+  status: "Success" | "Warning" | "Failed";
   ordersImported: number;
   customersImported: number;
   productsImported: number;
@@ -66,11 +66,20 @@ export interface ShopifySyncStatusResponse {
 }
 
 export interface ShopifyRunSyncResponse {
-  syncState: ShopifyRemoteSyncState;
-  log: ShopifyRemoteSyncLog;
-  customers: ShopifyImportedCustomer[];
-  orders: ShopifyImportedOrder[];
-  products: ShopifyImportedProduct[];
+  success?: boolean;
+  status?: "Success" | "Warning" | "Failed";
+  message?: string;
+  timestamp?: string;
+  counts?: {
+    products: number;
+    customers: number;
+    orders: number;
+  };
+  syncState?: ShopifyRemoteSyncState;
+  log?: ShopifyRemoteSyncLog;
+  customers?: ShopifyImportedCustomer[];
+  orders?: ShopifyImportedOrder[];
+  products?: ShopifyImportedProduct[];
 }
 
 export const SHOPIFY_SYNC_API_URL =
