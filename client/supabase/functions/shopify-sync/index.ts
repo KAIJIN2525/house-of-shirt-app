@@ -62,6 +62,7 @@ interface ShopifyOrder {
   financial_status: string;
   fulfillment_status: string;
   created_at: string;
+  updated_at?: string | null;
   email: string;
   customer?: ShopifyCustomer | null;
   shipping_address?: any;
@@ -615,6 +616,7 @@ const upsertOrders = async (
               status: isDelivered ? "Delivered" : "Processing",
               logistics_milestone: isDelivered ? "Delivered" : "Processing",
               updated_at: now,
+              shopify_event_at: order.updated_at ?? order.created_at ?? now,
               metadata: {
                 ...existingMetadata,
                 shopify_order_id: shopifyOrderId,
@@ -701,6 +703,7 @@ const upsertOrders = async (
         payment_method: paymentMethod,
         created_at: order.created_at,
         updated_at: now,
+        shopify_event_at: order.updated_at ?? order.created_at ?? now,
         metadata: {
           source: "shopify_sync",
           shopify_order_id: String(order.id),

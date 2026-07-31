@@ -38,6 +38,7 @@ All notable changes to House of Shirts should be recorded here. This file follow
 - Enforced admin authorization for privileged Edge Functions and secured scheduled Shopify sync calls with a Vault-backed secret.
 - Restored Shopify webhook HMAC verification and removed the predictable notification test-bypass fallback.
 - Added persistent Shopify webhook delivery deduplication with safe retry recovery and idempotent order upserts.
+- Prevented delayed Shopify events from overwriting newer order state across webhooks, scheduled sync, and admin refreshes.
 
 ### Known limitations
 

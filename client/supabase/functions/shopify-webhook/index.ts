@@ -29,6 +29,23 @@ const toNumber = (value: unknown) => {
 const normalizeEmail = (value: unknown) =>
   typeof value === "string" ? value.toLowerCase().trim() : "";
 
+const parseShopifyTimestamp = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value !== "string" || !value.trim()) continue;
+    const timestamp = Date.parse(value);
+    if (Number.isFinite(timestamp)) return new Date(timestamp).toISOString();
+  }
+  return null;
+};
+
+const isStaleShopifyEvent = (
+  storedTimestamp: unknown,
+  incomingTimestamp: string,
+) => {
+  if (typeof storedTimestamp !== "string" || !storedTimestamp) return false;
+  return Date.parse(storedTimestamp) >= Date.parse(incomingTimestamp);
+};
+
 const getOrderStatus = (order: any) => {
   if (order.cancelled_at) return "Cancelled";
   if (order.fulfillment_status === "fulfilled") return "Delivered";
@@ -105,31 +122,36 @@ const isAppMirroredShopifyOrder = (order: any) =>
 const linkMirroredShopifyOrderToAppOrder = async (
   supabase: ReturnType<typeof createClient>,
   order: any,
-) => {
+  eventTimestamp: string,
+): Promise<"linked" | "stale" | false> => {
   const appOrderId = getAppOrderIdFromShopifyOrder(order);
   const shopifyOrderId = String(order.id ?? "").trim();
   if (!appOrderId || !shopifyOrderId) return false;
 
   const { data: existing, error: existingError } = await supabase
     .from("orders")
-    .select("id, metadata")
+    .select("id, metadata, shopify_event_at")
     .eq("id", appOrderId)
     .maybeSingle();
 
   if (existingError) throw existingError;
-  if (!existing) return true;
+  if (!existing) return false;
 
   const existingMetadata = existing.metadata && typeof existing.metadata === "object"
     ? existing.metadata
     : {};
+  if (isStaleShopifyEvent(existing.shopify_event_at, eventTimestamp)) {
+    return "stale";
+  }
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from("orders")
     .update({
       shopify_order_id: shopifyOrderId,
       status: getOrderStatus(order),
       logistics_milestone: getLogisticsMilestone(order),
       updated_at: new Date().toISOString(),
+      shopify_event_at: eventTimestamp,
       metadata: {
         ...existingMetadata,
         shopify_order_id: shopifyOrderId,
@@ -142,9 +164,13 @@ const linkMirroredShopifyOrderToAppOrder = async (
         shipping_lines: order.shipping_lines ?? existingMetadata.shipping_lines ?? [],
       },
     })
-    .eq("id", appOrderId);
+    .eq("id", appOrderId)
+    .or(`shopify_event_at.is.null,shopify_event_at.lt.${eventTimestamp}`)
+    .select("id")
+    .maybeSingle();
 
   if (updateError) throw updateError;
+  if (!updated) return "stale";
 
   const { error: deleteError } = await supabase
     .from("orders")
@@ -152,25 +178,45 @@ const linkMirroredShopifyOrderToAppOrder = async (
     .eq("id", `shopify-${shopifyOrderId}`);
 
   if (deleteError) throw deleteError;
-  return true;
+  return "linked";
 };
 
 const upsertShopifyOrder = async (
   supabase: ReturnType<typeof createClient>,
   order: any,
-) => {
+  eventTimestamp: string,
+  retryAfterConflict = true,
+): Promise<{ orderName: string | null; stale: boolean }> => {
   const shopifyOrderId = String(order.id ?? "").trim();
-  if (!shopifyOrderId) return null;
+  if (!shopifyOrderId) return { orderName: null, stale: false };
 
   if (isAppMirroredShopifyOrder(order)) {
-    const linked = await linkMirroredShopifyOrderToAppOrder(supabase, order);
+    const linked = await linkMirroredShopifyOrderToAppOrder(
+      supabase,
+      order,
+      eventTimestamp,
+    );
     if (linked) {
-      return order.name || `#${order.order_number ?? shopifyOrderId}`;
+      return {
+        orderName: order.name || `#${order.order_number ?? shopifyOrderId}`,
+        stale: linked === "stale",
+      };
     }
   }
 
-  const email = normalizeEmail(order.email || order.customer?.email);
+  const { data: existingOrder, error: existingOrderError } = await supabase
+    .from("orders")
+    .select("id, shopify_event_at")
+    .eq("shopify_order_id", shopifyOrderId)
+    .maybeSingle();
+  if (existingOrderError) throw existingOrderError;
+
   const orderName = order.name || `#${order.order_number ?? shopifyOrderId}`;
+  if (isStaleShopifyEvent(existingOrder?.shopify_event_at, eventTimestamp)) {
+    return { orderName, stale: true };
+  }
+
+  const email = normalizeEmail(order.email || order.customer?.email);
   const phone =
     order.phone ||
     order.customer?.phone ||
@@ -212,6 +258,7 @@ const upsertShopifyOrder = async (
     payment_method: getPaymentMethod(order),
     created_at: order.created_at || new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    shopify_event_at: eventTimestamp,
     metadata: {
       source: "shopify_webhook",
       shopify_order_id: shopifyOrderId,
@@ -229,12 +276,24 @@ const upsertShopifyOrder = async (
     },
   };
 
-  const { error } = await supabase
-    .from("orders")
-    .upsert(row, { onConflict: "shopify_order_id" });
+  if (existingOrder) {
+    const { data: updated, error } = await supabase
+      .from("orders")
+      .update(row)
+      .eq("shopify_order_id", shopifyOrderId)
+      .or(`shopify_event_at.is.null,shopify_event_at.lt.${eventTimestamp}`)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    return { orderName, stale: !updated };
+  }
 
+  const { error } = await supabase.from("orders").insert(row);
+  if (error?.code === "23505" && retryAfterConflict) {
+    return await upsertShopifyOrder(supabase, order, eventTimestamp, false);
+  }
   if (error) throw error;
-  return orderName;
+  return { orderName, stale: false };
 };
 
 Deno.serve(async (req) => {
@@ -281,6 +340,15 @@ Deno.serve(async (req) => {
     }
 
     const order = JSON.parse(rawBody);
+    const eventTimestamp = parseShopifyTimestamp(
+      order.updated_at,
+      req.headers.get("X-Shopify-Triggered-At"),
+      order.created_at,
+    );
+    if (!eventTimestamp) {
+      return new Response(JSON.stringify({ error: "Missing Shopify event timestamp" }), { status: 400 });
+    }
+
     const supabase = createClient(supabaseUrl, serviceRoleKey);
     const { data: claimed, error: claimError } = await supabase.rpc(
       "claim_shopify_webhook",
@@ -318,12 +386,24 @@ Deno.serve(async (req) => {
 
     let syncedOrderName: string | null = null;
     if (topic.startsWith("orders/")) {
-      syncedOrderName = await upsertShopifyOrder(supabase, order);
-      console.log(`Synced Shopify order ${syncedOrderName ?? order.id} from ${topic}`);
+      const syncResult = await upsertShopifyOrder(
+        supabase,
+        order,
+        eventTimestamp,
+      );
+      syncedOrderName = syncResult.orderName;
+      console.log(
+        `${syncResult.stale ? "Ignored stale" : "Synced"} Shopify order ${syncedOrderName ?? order.id} from ${topic}`,
+      );
 
       // Updates/cancellations should keep Supabase fresh but must not resend blacklist alerts.
       if (topic !== "orders/create") {
-        return await successResponse({ ok: true, synced: true, order: syncedOrderName });
+        return await successResponse({
+          ok: true,
+          synced: !syncResult.stale,
+          stale: syncResult.stale,
+          order: syncedOrderName,
+        });
       }
 
       const isAppOrder =

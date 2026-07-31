@@ -197,6 +197,7 @@ const linkMirroredShopifyOrderToAppOrder = async (
       status: getStatus(order),
       logistics_milestone: getMilestone(order),
       updated_at: new Date().toISOString(),
+      shopify_event_at: order.updated_at ?? order.created_at ?? new Date().toISOString(),
       metadata: {
         ...existingMetadata,
         shopify_order_id: shopifyOrderId,
@@ -314,6 +315,7 @@ const upsertLatestShopifyOrders = async (
       payment_method: paymentMethod,
       created_at: order.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      shopify_event_at: order.updated_at ?? order.created_at ?? new Date().toISOString(),
       metadata: {
         source: "admin_orders_latest_refresh",
         shopify_order_id: shopifyOrderId,
