@@ -105,7 +105,7 @@ export default function InitiateReturnScreen() {
       <SafeAreaView className="flex-1 items-center justify-center bg-[#f5f6f8] px-6">
         <Text className="text-center font-bold text-xl text-black">Order not found</Text>
         <Text className="mt-3 text-center text-sm text-neutral-500">We could not find this order for a return or exchange.</Text>
-        <Pressable onPress={() => router.back()} className="mt-6 bg-black px-6 py-3">
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mt-6 bg-black px-6 py-3">
           <Text className="font-bold text-white">Go back</Text>
         </Pressable>
       </SafeAreaView>
@@ -119,7 +119,7 @@ export default function InitiateReturnScreen() {
         contentContainerStyle={{ paddingBottom: 28 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="arrow-back" size={22} color="#111111" />
           </Pressable>
           <Text className="font-bold text-[14px] text-black">
@@ -152,6 +152,9 @@ export default function InitiateReturnScreen() {
                   <Pressable
                     key={item.id}
                     onPress={() => toggleItem(item.id)}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={`${item.title}, ${item.subtitle}, ${formatPrice(item.price)}`}
+                    accessibilityState={{ checked: selected }}
                     className="flex-row gap-3"
                   >
                     <View
@@ -206,6 +209,9 @@ export default function InitiateReturnScreen() {
                 <Pressable
                   key={reason}
                   onPress={() => setSelectedReason(reason)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected, selected }}
+                  accessibilityLabel={reason}
                   className={`flex-row items-center justify-between px-4 py-4 ${
                     index !== RETURN_REASONS.length - 1 ? "border-b border-gray-100" : ""
                   }`}
@@ -235,6 +241,7 @@ export default function InitiateReturnScreen() {
           <TextInput
             value={comments}
             onChangeText={setComments}
+            accessibilityLabel="Additional return comments"
             multiline
             textAlignVertical="top"
             className="mt-4 min-h-28 bg-white px-4 py-4 font-normal text-[13px] text-neutral-500"
@@ -244,7 +251,7 @@ export default function InitiateReturnScreen() {
         </View>
 
         <View className="mt-8 px-6">
-          <Pressable onPress={handleSubmitReturn} className="bg-[#131926] py-4">
+          <Pressable onPress={handleSubmitReturn} accessibilityRole="button" accessibilityLabel={`Submit ${requestType}`} accessibilityState={{ disabled: selectedItems.length === 0 }} disabled={selectedItems.length === 0} className="bg-[#131926] py-4">
             <Text className="text-center font-bold text-[11px] tracking-[2px] text-white">
               SUBMIT {requestType === "exchange" ? "EXCHANGE" : "RETURN"}
             </Text>

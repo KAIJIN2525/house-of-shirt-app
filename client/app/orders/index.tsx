@@ -39,7 +39,7 @@ function OrderSkeleton() {
 
 const formatOrderReference = (id: string) => id.startsWith("#") ? id : `#${id}`;
 
-function getOrderDisplayTitle(order: { title?: string; lineItems?: Array<{ title?: string; quantity?: number }> }) {
+function getOrderDisplayTitle(order: { title?: string; lineItems?: { title?: string; quantity?: number }[] }) {
   const items = order.lineItems ?? [];
   if (items.length === 0) return order.title ?? "Order";
 
@@ -50,7 +50,7 @@ function getOrderDisplayTitle(order: { title?: string; lineItems?: Array<{ title
   return `${first} +${items.length - 1} more`;
 }
 
-function getOrderSubtitle(order: { lineItems?: Array<{ quantity?: number }> }) {
+function getOrderSubtitle(order: { lineItems?: { quantity?: number }[] }) {
   const items = order.lineItems ?? [];
   if (items.length === 0) return null;
   const totalQty = items.reduce((sum, i) => sum + (i.quantity ?? 1), 0);
@@ -117,7 +117,7 @@ export default function OrdersScreen() {
         }
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <HapticPressable onPress={() => router.back()}>
+          <HapticPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="arrow-back" size={22} color={isDark ? "#ffffff" : "#111111"} />
           </HapticPressable>
           <Text className="font-bold text-[11px] tracking-[1.8px] text-black dark:text-white">
@@ -136,7 +136,7 @@ export default function OrdersScreen() {
         </View>
 
         {isInitialLoading ? (
-          <View className="mx-6 mt-6 rounded-[28px] border border-black/5 bg-white px-5 py-5 dark:border-white/10 dark:bg-[#101215]">
+          <View accessible accessibilityRole="progressbar" accessibilityLabel="Loading orders" accessibilityLiveRegion="polite" accessibilityState={{ busy: true }} className="mx-6 mt-6 rounded-[28px] border border-black/5 bg-white px-5 py-5 dark:border-white/10 dark:bg-[#101215]">
             <View className="flex-row items-center gap-3">
               <ActivityIndicator size="small" color={isDark ? "#ffffff" : "#111111"} />
               <View className="flex-1">
@@ -172,6 +172,8 @@ export default function OrdersScreen() {
                 </Text>
                 <HapticPressable
                   onPress={() => router.push("/(tabs)/shop")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Start shopping"
                   className="bg-black dark:bg-white px-8 py-4 rounded-full"
                 >
                   <Text className="font-bold text-[12px] tracking-[1.5px] text-white dark:text-black">
@@ -239,6 +241,8 @@ export default function OrdersScreen() {
                     <View className="mt-4 flex-row gap-3">
                       <HapticPressable
                         onPress={() => router.push(`/orders/${order.id}` as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Track order ${formatOrderReference(order.id)}, status ${order.status}`}
                         className="flex-1 bg-black py-3"
                       >
                         <Text className="text-center font-bold text-[11px] tracking-[1.9px] text-white">
@@ -247,6 +251,8 @@ export default function OrdersScreen() {
                       </HapticPressable>
                       <HapticPressable
                         onPress={() => router.push(`/orders/${order.id}` as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View details for order ${formatOrderReference(order.id)}`}
                         className="flex-1 border border-black py-3 dark:border-white"
                       >
                         <Text className="text-center font-bold text-[11px] tracking-[1.9px] text-black dark:text-white">

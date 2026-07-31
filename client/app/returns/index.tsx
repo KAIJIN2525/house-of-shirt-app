@@ -25,7 +25,7 @@ export default function ReturnsHistoryScreen() {
         contentContainerStyle={{ paddingBottom: 36 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="arrow-back" size={22} color={isDark ? "#ffffff" : "#111111"} />
           </Pressable>
           <Text className="font-bold text-[11px] tracking-[1.8px] text-black dark:text-white">
@@ -49,6 +49,9 @@ export default function ReturnsHistoryScreen() {
               <Pressable
                 key={request.id}
                 onPress={() => router.push(`/returns/status/${request.id}` as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`${request.type === "exchange" ? "Exchange" : "Return"} ${request.rmaNumber}, status ${request.status}, linked to order ${request.orderId}`}
+                accessibilityHint="Opens return status"
                 className="rounded-[28px] bg-white px-5 py-5 dark:bg-[#101215]"
               >
                 <View className="flex-row items-start justify-between">

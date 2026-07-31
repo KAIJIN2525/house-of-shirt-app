@@ -215,7 +215,7 @@ export default function SupportChatScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#f5f6f8] dark:bg-[#050505]">
       <View className="flex-row items-center justify-between border-b border-black/5 bg-white px-6 pb-4 pt-4 dark:border-white/10 dark:bg-[#101215]">
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons
             name="arrow-back"
             size={22}
@@ -237,6 +237,8 @@ export default function SupportChatScreen() {
 
         <Pressable
           onPress={() => Linking.openURL(`https://wa.me/${WHATSAPP_NUMBER}`)}
+          accessibilityRole="button"
+          accessibilityLabel="Open House of Shirts WhatsApp support"
         >
           <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
         </Pressable>
@@ -267,6 +269,9 @@ export default function SupportChatScreen() {
               return (
                 <Pressable
                   key={topic.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${topic.label}. ${topic.sublabel}`}
+                  accessibilityState={{ selected: isActive }}
                   onPress={() => {
                     void Haptics.selectionAsync();
                     setSelectedTopic(isActive ? null : topic.id);
@@ -372,6 +377,7 @@ export default function SupportChatScreen() {
             <TextInput
               value={extraNote}
               onChangeText={setExtraNote}
+              accessibilityLabel={selectedTopic === "general" ? "Support message" : "Additional support details"}
               multiline
               numberOfLines={4}
               placeholder={
@@ -390,6 +396,9 @@ export default function SupportChatScreen() {
           <Pressable
             onPress={handleSend}
             disabled={!selectedTopic}
+            accessibilityRole="button"
+            accessibilityLabel={selectedTopic ? `Open WhatsApp for ${activeTopic?.label}` : "Select a support topic first"}
+            accessibilityState={{ disabled: !selectedTopic }}
             className={`flex-row items-center justify-center gap-3 border py-5 ${
               selectedTopic
                 ? "border-black bg-black dark:border-white dark:bg-white"

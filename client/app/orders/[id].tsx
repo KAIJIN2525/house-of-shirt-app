@@ -17,9 +17,22 @@ export default function OrderDetailsScreen() {
   const {  orders, getOrderById  } = useOrdersStore();
   const {  isDark  } = useThemeStore();
 
-  const order =
-    getOrderById(id) ??
-    orders.find((item) => item.id === "HS-89201")!;
+  const order = getOrderById(id) ?? orders.find((item) => item.id === id);
+  if (!order) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-[#f5f6f8] px-6 dark:bg-[#050505]">
+        <Text accessibilityRole="alert" className="text-center font-bold text-2xl text-black dark:text-white">
+          Order not found
+        </Text>
+        <Text className="mt-3 text-center text-sm text-neutral-500">
+          This order may still be loading or is no longer available.
+        </Text>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mt-6 bg-black px-6 py-3 dark:bg-white">
+          <Text className="font-bold text-white dark:text-black">GO BACK</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
   const summaryItems =
     order.lineItems && order.lineItems.length > 0
       ? order.lineItems
@@ -56,13 +69,13 @@ export default function OrderDetailsScreen() {
         contentContainerStyle={{ paddingBottom: 30 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="arrow-back" size={22} color={isDark ? "#ffffff" : "#111111"} />
           </Pressable>
           <Text className="font-bold text-[14px] text-black dark:text-white">
             Order Details
           </Text>
-          <Pressable onPress={handleShareOrder}>
+          <Pressable onPress={handleShareOrder} accessibilityRole="button" accessibilityLabel={`Share order ${formatOrderReference(order.id)}`}>
             <Ionicons name="ellipsis-vertical" size={16} color={isDark ? "#ffffff" : "#111111"} />
           </Pressable>
         </View>

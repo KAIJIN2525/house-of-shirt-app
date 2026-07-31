@@ -39,7 +39,7 @@ export default function ReturnStatusScreen() {
         contentContainerStyle={{ paddingBottom: 30 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-4 pt-4">
-          <Pressable onPress={() => router.back()}>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="arrow-back" size={22} color={isDark ? "#ffffff" : "#111111"} />
           </Pressable>
           <Text className="font-bold text-[14px] text-black dark:text-white">
@@ -142,6 +142,8 @@ export default function ReturnStatusScreen() {
                   },
                 } as any)
               }
+              accessibilityRole="button"
+              accessibilityLabel={`Get help with ${request.type} ${request.rmaNumber}`}
               className="mt-8 bg-[#131926] py-4"
             >
               <Text className="text-center font-bold text-[11px] tracking-[2px] text-white">

@@ -61,6 +61,8 @@ const NotificationCard = ({
           {item.archived ? (
             <Pressable
               onPress={() => onRestore(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`Restore ${item.title}`}
               className="w-28 items-center justify-center bg-[#d6dde7]"
             >
               <Text className="text-center font-bold text-[10px] tracking-[1.2px] text-[#161c28]">
@@ -71,6 +73,8 @@ const NotificationCard = ({
             <>
               <Pressable
                 onPress={() => onToggleRead(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.read ? "Mark unread" : "Mark read"}: ${item.title}`}
                 className="w-24 items-center justify-center bg-[#d6dde7]"
               >
                 <Text className="text-center font-bold text-[10px] tracking-[1.2px] text-[#161c28]">
@@ -79,6 +83,8 @@ const NotificationCard = ({
               </Pressable>
               <Pressable
                 onPress={() => onArchive(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Archive ${item.title}`}
                 className="w-24 items-center justify-center bg-[#161c28]"
               >
                 <Text className="text-center font-bold text-[10px] tracking-[1.2px] text-white">
@@ -93,6 +99,9 @@ const NotificationCard = ({
   >
     <Pressable
       onPress={() => onOpen(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.title}. ${item.message}. ${item.read ? "Read" : "Unread"}${item.archived ? ", archived" : ""}`}
+      accessibilityHint="Opens notification"
       className={`mb-4 rounded-[28px] px-4 py-4 ${
         item.archived ? "bg-[#f0f2f5]" : item.read ? "bg-white" : "bg-[#fdfcf9]"
       }`}
@@ -235,6 +244,8 @@ export default function NotificationsScreen() {
         <View className="flex-row items-center justify-between">
           <Pressable
             onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
             className="h-10 w-10 items-center justify-center"
           >
             <Ionicons name="arrow-back" size={20} color="#111111" />
@@ -251,6 +262,9 @@ export default function NotificationsScreen() {
                 void markAllNotificationsRead();
               }
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`Mark all notifications read${unreadNotificationCount > 0 ? `, ${unreadNotificationCount} unread` : ""}`}
+            accessibilityState={{ disabled: unreadNotificationCount === 0 }}
             className="relative min-w-[40px] items-center justify-center"
           >
             <Ionicons name="mail-open-outline" size={18} color="#111111" />
@@ -315,6 +329,9 @@ export default function NotificationsScreen() {
                 return (
                   <Pressable
                     key={option.id}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                    accessibilityLabel={`${option.label} notifications`}
                     onPress={() => {
                       void Haptics.selectionAsync();
                       setActiveFilter(option.id);
