@@ -1,4 +1,5 @@
 import { createClient } from "supabase";
+import { fetchAllShopifyRestResources } from "../_shared/shopify-rest.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +9,6 @@ const corsHeaders = {
 };
 
 const SHOPIFY_API_VERSION = "2026-07";
-const SHOPIFY_PAGE_SIZE = 250;
 const RESEND_FROM_EMAIL =
   Deno.env.get("RESEND_FROM_EMAIL") ??
   "House of Shirts <onboarding@resend.dev>";
@@ -206,155 +206,40 @@ const getRequestPath = (req: Request) => {
 const fetchAllProducts = async (
   storeDomain: string,
   accessToken: string,
-): Promise<ShopifyProduct[]> => {
-  const products: ShopifyProduct[] = [];
-  let sinceId: number | undefined;
-
-  while (true) {
-    const shopifyUrl = new URL(
-      `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/products.json`,
-    );
-    shopifyUrl.searchParams.set("limit", String(SHOPIFY_PAGE_SIZE));
-    shopifyUrl.searchParams.set("status", "active");
-
-    if (sinceId !== undefined) {
-      shopifyUrl.searchParams.set("since_id", String(sinceId));
-    }
-
-    const response = await fetch(shopifyUrl, {
-      headers: {
-        "X-Shopify-Access-Token": accessToken,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(
-        `Shopify API error (products) (${response.status}): ${body || response.statusText}`,
-      );
-    }
-
-    const data = (await response.json()) as ShopifyProductsResponse;
-    const batch = Array.isArray(data.products) ? data.products : [];
-
-    if (batch.length === 0) {
-      break;
-    }
-
-    products.push(...batch);
-
-    if (batch.length < SHOPIFY_PAGE_SIZE) {
-      break;
-    }
-
-    sinceId = batch[batch.length - 1].id;
-  }
-
-  return products;
-};
+): Promise<ShopifyProduct[]> =>
+  await fetchAllShopifyRestResources({
+    storeDomain,
+    apiVersion: SHOPIFY_API_VERSION,
+    accessToken,
+    resource: "products",
+    collectionKey: "products",
+    configureUrl: (url: URL) => url.searchParams.set("status", "active"),
+  });
 
 const fetchAllCustomers = async (
   storeDomain: string,
   accessToken: string,
-): Promise<ShopifyCustomer[]> => {
-  const customers: ShopifyCustomer[] = [];
-  let sinceId: number | undefined;
-
-  while (true) {
-    const shopifyUrl = new URL(
-      `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/customers.json`,
-    );
-    shopifyUrl.searchParams.set("limit", String(SHOPIFY_PAGE_SIZE));
-
-    if (sinceId !== undefined) {
-      shopifyUrl.searchParams.set("since_id", String(sinceId));
-    }
-
-    const response = await fetch(shopifyUrl, {
-      headers: {
-        "X-Shopify-Access-Token": accessToken,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(
-        `Shopify API error (customers) (${response.status}): ${body || response.statusText}`,
-      );
-    }
-
-    const data = (await response.json()) as ShopifyCustomersResponse;
-    const batch = Array.isArray(data.customers) ? data.customers : [];
-
-    if (batch.length === 0) {
-      break;
-    }
-
-    customers.push(...batch);
-
-    if (batch.length < SHOPIFY_PAGE_SIZE) {
-      break;
-    }
-
-    sinceId = batch[batch.length - 1].id;
-  }
-
-  return customers;
-};
+): Promise<ShopifyCustomer[]> =>
+  await fetchAllShopifyRestResources({
+    storeDomain,
+    apiVersion: SHOPIFY_API_VERSION,
+    accessToken,
+    resource: "customers",
+    collectionKey: "customers",
+  });
 
 const fetchAllOrders = async (
   storeDomain: string,
   accessToken: string,
-): Promise<ShopifyOrder[]> => {
-  const orders: ShopifyOrder[] = [];
-  let sinceId: number | undefined;
-
-  while (true) {
-    const shopifyUrl = new URL(
-      `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/orders.json`,
-    );
-    shopifyUrl.searchParams.set("limit", String(SHOPIFY_PAGE_SIZE));
-    shopifyUrl.searchParams.set("status", "any"); // Fetch all orders (open, closed, cancelled)
-
-    if (sinceId !== undefined) {
-      shopifyUrl.searchParams.set("since_id", String(sinceId));
-    }
-
-    const response = await fetch(shopifyUrl, {
-      headers: {
-        "X-Shopify-Access-Token": accessToken,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(
-        `Shopify API error (orders) (${response.status}): ${body || response.statusText}`,
-      );
-    }
-
-    const data = (await response.json()) as ShopifyOrdersResponse;
-    const batch = Array.isArray(data.orders) ? data.orders : [];
-
-    if (batch.length === 0) {
-      break;
-    }
-
-    orders.push(...batch);
-
-    if (batch.length < SHOPIFY_PAGE_SIZE) {
-      break;
-    }
-
-    sinceId = batch[batch.length - 1].id;
-  }
-
-  return orders;
-};
-
+): Promise<ShopifyOrder[]> =>
+  await fetchAllShopifyRestResources({
+    storeDomain,
+    apiVersion: SHOPIFY_API_VERSION,
+    accessToken,
+    resource: "orders",
+    collectionKey: "orders",
+    configureUrl: (url: URL) => url.searchParams.set("status", "any"),
+  });
 const dedupeProducts = (products: ShopifyProduct[]) => {
   const deduped = new Map<string, ShopifyProduct>();
 

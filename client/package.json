@@ -10,6 +10,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "load-test:shopify": "node ./scripts/load-test-shopify-sync.mjs",
     "build:dev:android": "eas build --platform android --profile development",
     "build:dev:ios": "eas build --platform ios --profile development",
     "build:dev:ios:device": "eas build --platform ios --profile development:device",

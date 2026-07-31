@@ -40,6 +40,7 @@ All notable changes to House of Shirts should be recorded here. This file follow
 - Added persistent Shopify webhook delivery deduplication with safe retry recovery and idempotent order upserts.
 - Prevented delayed Shopify events from overwriting newer order state across webhooks, scheduled sync, and admin refreshes.
 - Added monitored Shopify sync outcomes, deduplicated admin incidents, stale-sync checks, and automatic incident recovery.
+- Added repeatable large-catalog Shopify load testing plus 429/server-error retries, Retry-After support, and request-bucket throttling.
 
 ### Known limitations
 

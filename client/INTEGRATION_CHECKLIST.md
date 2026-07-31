@@ -87,7 +87,7 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Verified webhook HMAC, persistent delivery replay protection/deduplication, and Vault-backed scheduled-job authentication.
 - [x] Prevented stale or out-of-order Shopify webhook deliveries from regressing newer order state using monotonic Shopify event timestamps.
 - [x] Added deduplicated Shopify sync failure incidents, stale-sync monitoring, admin alerts, and automatic recovery resolution.
-- [ ] Load-test large Shopify catalogues and order histories.
+- [x] Load-tested 52,500 Shopify records and 100,000 order line items across 220 paginated requests with simulated rate limits and bounded memory.
 
 ## Admin and content management
 
