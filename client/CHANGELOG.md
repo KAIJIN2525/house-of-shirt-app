@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to House of Shirts should be recorded here. This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and should use Semantic Versioning once releases are tagged.
 
@@ -22,6 +22,11 @@ All notable changes to House of Shirts should be recorded here. This file follow
 - Expanded the original storefront into a combined commerce and store-operations platform.
 - Updated to Expo SDK 54, React Native 0.81, React 19, and typed Expo Router routes.
 - Added branded fonts, theme handling, dark mode, loaders, haptics, and notification feedback.
+
+### Security
+
+- Restricted profile visibility and blocked users from self-promoting through is_admin.
+- Added protected admin route gating and auditable owner/admin staff access grants.
 
 ### Known limitations
 

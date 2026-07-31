@@ -29,7 +29,9 @@ const Home = () => {
   const products = useProductsStore((state) => state.products);
   const fetchProducts = useProductsStore((state) => state.fetchProducts);
   const { isDark } = useThemeStore();
-  const [loadedBrandLogos, setLoadedBrandLogos] = useState<Record<string, boolean>>({});
+  const [loadedBrandLogos, setLoadedBrandLogos] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     void fetchProducts();
@@ -44,7 +46,7 @@ const Home = () => {
       ctaText: banner.isActive ? banner.ctaText : "Shop the Look",
       targetUrl: banner.targetUrl,
     }),
-    [banner]
+    [banner],
   );
   const heroImageSource = banner.imageUri
     ? { uri: banner.imageUri }
@@ -80,14 +82,22 @@ const Home = () => {
             onPress={() => router.push("/search" as any)}
             className="w-10 items-start"
           >
-            <Ionicons name="search" size={24} color={isDark ? "#ffffff" : "#000"} />
+            <Ionicons
+              name="search"
+              size={24}
+              color={isDark ? "#ffffff" : "#000"}
+            />
           </Pressable>
           <BrandLogo width={190} height={36} style={{ flex: 1 }} />
           <Pressable
             onPress={() => router.push("/notifications" as any)}
             className="relative w-10 items-end"
           >
-            <Ionicons name="notifications-outline" size={24} color={isDark ? "#ffffff" : "#000"} />
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={isDark ? "#ffffff" : "#000"}
+            />
             {unreadNotificationCount > 0 ? (
               <View className="absolute -right-1 -top-1 h-4 min-w-[16px] items-center justify-center rounded-full bg-slate-800 px-1">
                 <Text className="font-bold text-[10px] leading-3 text-white">
@@ -125,7 +135,7 @@ const Home = () => {
         <View className="mb-8">
           <View className="mb-6 flex-row items-center justify-between px-6">
             <View>
-              <Text className="font-light text-sm tracking-wider">
+              <Text className="font-light text-sm tracking-wider text-black dark:text-white">
                 EDITOR&apos;S CHOICE
               </Text>
               <Text className="font-bold text-xl tracking-wide text-black dark:text-white uppercase">
@@ -137,13 +147,21 @@ const Home = () => {
                 onPress={() => handleTrendingScroll("left")}
                 className="h-8 w-8 items-center justify-center"
               >
-                <Ionicons name="arrow-back" size={16} color="#000" />
+                <Ionicons
+                  name="arrow-back"
+                  size={16}
+                  color={isDark ? "#ffffff" : "#000000"}
+                />
               </Pressable>
               <Pressable
                 onPress={() => handleTrendingScroll("right")}
                 className="h-8 w-8 items-center justify-center"
               >
-                <Ionicons name="arrow-forward" size={16} color="#000" />
+                <Ionicons
+                  name="arrow-forward"
+                  size={16}
+                  color={isDark ? "#ffffff" : "#000000"}
+                />
               </Pressable>
             </View>
           </View>
@@ -179,8 +197,8 @@ const Home = () => {
                   </View>
 
                   <View className="py-4">
-                    <Text className="mb-2 font-light text-xs text-gray-500 dark:text-gray-400">
-                      FEATURED ITEM
+                    <Text className="mb-2 text-[11px] font-bold uppercase tracking-[1.5px] text-gray-400">
+                      {item.brand?.toUpperCase()}
                     </Text>
                     <Text
                       className="mb-3 font-bold text-sm text-black dark:text-white"
@@ -209,17 +227,19 @@ const Home = () => {
             </Text>
           </View>
 
-            <FlatList
+          <FlatList
             data={brands}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 24, paddingRight: 24}}
+            contentContainerStyle={{ paddingLeft: 24, paddingRight: 24 }}
             renderItem={({ item }) => (
               <Pressable
-                onPress={() => router.push({
-                  pathname: "/(tabs)/shop",
-                  params: { search: item.name }
-                } as any)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/shop",
+                    params: { search: item.name },
+                  } as any)
+                }
                 className="items-center"
               >
                 <View className="h-28 w-40 items-center justify-center relative overflow-hidden">

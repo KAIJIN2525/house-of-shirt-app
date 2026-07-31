@@ -1,4 +1,4 @@
-﻿# House of Shirts Integration Checklist
+# House of Shirts Integration Checklist
 
 Last audited: 2026-07-31
 
@@ -22,7 +22,7 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Profile-creation trigger, sign-out store cleanup, and `profiles.is_admin` model.
 - [ ] Configure and test production OAuth/redirect URLs.
 - [x] Set-new-password deep-link flow with recovery-session verification.
-- [ ] Verify all admin routes and writes reject non-admin users server-side.
+- [ ] Verify all admin writes reject non-admin users server-side; admin routes are now guarded in-app.
 - [ ] Add account deletion, user data export, and email verification/resend UX.
 
 ## Catalogue, search, favorites, and restock
@@ -91,7 +91,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Dashboard, CRM, blacklist, returns, support, restock, notifications, brands, alerts, exports, and settings screens.
 - [x] Editorial banner states (draft/live/scheduled/default/archived), version history, managed copy, and media library.
 - [x] Supabase Storage bucket and RLS policies for managed content/assets.
-- [ ] Add granular staff roles if a single admin flag is insufficient.
+- [x] Added owner/admin staff-access grants with pending-email activation and protected grant/revoke controls.
+- [ ] Add granular per-feature staff permissions if full admin access is too broad.
 - [ ] Add immutable audit history for content, customers, orders, and campaigns.
 - [ ] Validate media compression, dimensions, type/size limits, orphan cleanup, and export retention/security.
 

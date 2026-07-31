@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/authStore";
 import "../../global.css";
 import { BrandLogo } from "@/components/BrandLogo";
-
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 const Badge = ({ count }: { count: number }) => {
   if (!count) {
@@ -42,11 +42,11 @@ const textTransformOptions: { id: TextTransformMode; label: string }[] = [
   { id: "capitalize", label: "Aa" },
 ];
 
-
 const Profile = () => {
   // Navigation
   const router = useRouter();
   const { user, signOut } = useAuthStore();
+  const { isAdmin } = useAdminAccess();
   const { myOrders: orders, fetchMyOrders } = useOrdersStore();
   const { unreadCount: returnsUnreadCount } = useReturnsStore();
 
@@ -65,7 +65,7 @@ const Profile = () => {
       });
 
       return () => task.cancel();
-    }, [fetchMyOrders])
+    }, [fetchMyOrders]),
   );
 
   const handleOrdersPress = () => {
@@ -73,10 +73,12 @@ const Profile = () => {
   };
 
   const activeOrdersCount = useMemo(
-    () => orders.filter((order) => order.status !== "Delivered" && order.status !== "delivered").length,
+    () =>
+      orders.filter(
+        (order) => order.status !== "Delivered" && order.status !== "delivered",
+      ).length,
     [orders],
   );
-
 
   const totalPieces = useMemo(() => {
     return orders.reduce((sum, order) => {
@@ -94,7 +96,11 @@ const Profile = () => {
           <Ionicons name="menu" size={24} color={isDark ? "#f8fafc" : "#000"} />
           <BrandLogo width={154} height={28} />
           <Pressable onPress={() => router.push("/search" as any)}>
-            <Ionicons name="search" size={24} color={isDark ? "#f8fafc" : "#000"} />
+            <Ionicons
+              name="search"
+              size={24}
+              color={isDark ? "#f8fafc" : "#000"}
+            />
           </Pressable>
         </View>
 
@@ -106,16 +112,20 @@ const Profile = () => {
 
             <View className="flex-1 justify-center">
               <Text className="font-medium text-xs text-slate-600 dark:text-white uppercase">
-                MEMBER SINCE {user?.created_at ? new Date(user.created_at).getFullYear() : "2024"}
+                MEMBER SINCE{" "}
+                {user?.created_at
+                  ? new Date(user.created_at).getFullYear()
+                  : "2024"}
               </Text>
               <Text className="mb-1 font-bold text-5xl text-black dark:text-white">
-                {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Atelier Guest"}
+                {user?.user_metadata?.full_name ||
+                  user?.email?.split("@")[0] ||
+                  "Atelier Guest"}
               </Text>
               <Text className="font-normal text-sm text-gray-600 dark:text-white">
                 {user?.email || "No email provided"}
               </Text>
             </View>
-
           </View>
         </View>
 
@@ -157,7 +167,11 @@ const Profile = () => {
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-3">
-                  <Ionicons name="bag-outline" size={20} color={isDark ? "#fff" : "#000"} />
+                  <Ionicons
+                    name="bag-outline"
+                    size={20}
+                    color={isDark ? "#fff" : "#000"}
+                  />
                   <Text className="font-normal text-base text-black dark:text-white">
                     Orders
                   </Text>
@@ -172,7 +186,11 @@ const Profile = () => {
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-3">
-                  <Ionicons name="heart-outline" size={20} color={isDark ? "#fff" : "#000"} />
+                  <Ionicons
+                    name="heart-outline"
+                    size={20}
+                    color={isDark ? "#fff" : "#000"}
+                  />
                   <Text className="font-normal text-base text-black dark:text-white">
                     Wishlist
                   </Text>
@@ -187,7 +205,11 @@ const Profile = () => {
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-3">
-                  <Ionicons name="location-outline" size={20} color={isDark ? "#fff" : "#000"} />
+                  <Ionicons
+                    name="location-outline"
+                    size={20}
+                    color={isDark ? "#fff" : "#000"}
+                  />
                   <Text className="font-normal text-base text-black dark:text-white">
                     Saved Addresses
                   </Text>
@@ -200,7 +222,13 @@ const Profile = () => {
               <View className="flex-row items-start justify-between gap-4">
                 <View className="flex-row items-center gap-3">
                   <Ionicons
-                    name={themeMode === "system" ? "phone-portrait-outline" : isDark ? "moon-outline" : "sunny-outline"}
+                    name={
+                      themeMode === "system"
+                        ? "phone-portrait-outline"
+                        : isDark
+                          ? "moon-outline"
+                          : "sunny-outline"
+                    }
                     size={20}
                     color={isDark ? "#fff" : "#000"}
                   />
@@ -250,7 +278,11 @@ const Profile = () => {
             <View className="border-b border-gray-100 py-4 dark:border-white/10">
               <View className="gap-4">
                 <View className="flex-row items-start gap-3">
-                  <Ionicons name="text-outline" size={20} color={isDark ? "#fff" : "#000"} />
+                  <Ionicons
+                    name="text-outline"
+                    size={20}
+                    color={isDark ? "#fff" : "#000"}
+                  />
                   <View className="flex-1">
                     <Text className="font-normal text-base text-black dark:text-white">
                       Text Case
@@ -338,38 +370,40 @@ const Profile = () => {
           </View>
         </View>
 
-        <View className="mb-8 px-6">
-          <View className="mb-4">
-            <Text className="mb-2 font-bold text-sm tracking-wider text-black dark:text-white">
-              ATELIER TOOLS
-            </Text>
-            <View className="w-10 border border-black dark:border-white" />
-          </View>
-
-          <Pressable
-            className="bg-[#1f2736] px-5 py-5"
-            onPress={() => router.push("/admin" as any)}
-          >
-            <View className="flex-row items-start justify-between">
-              <View className="flex-1 pr-4">
-                <Text className="font-bold text-[11px] tracking-[1.5px] text-white/50">
-                  HOUSE OF SHIRTS ADMIN
-                </Text>
-                <Text className="mt-3 font-bold text-[28px] leading-8 text-white">
-                  Open Atelier Dashboard
-                </Text>
-                <Text className="mt-3 font-normal text-[13px] leading-6 text-white/70">
-                  Review performance, recent orders, editorial updates, and
-                  workshop actions from one control room.
-                </Text>
-              </View>
-
-              <View className="h-10 w-10 items-center justify-center bg-white">
-                <Ionicons name="arrow-forward" size={18} color="#111111" />
-              </View>
+        {isAdmin ? (
+          <View className="mb-8 px-6">
+            <View className="mb-4">
+              <Text className="mb-2 font-bold text-sm tracking-wider text-black dark:text-white">
+                ATELIER TOOLS
+              </Text>
+              <View className="w-10 border border-black dark:border-white" />
             </View>
-          </Pressable>
-        </View>
+
+            <Pressable
+              className="bg-[#1f2736] px-5 py-5"
+              onPress={() => router.push("/admin" as any)}
+            >
+              <View className="flex-row items-start justify-between">
+                <View className="flex-1 pr-4">
+                  <Text className="font-bold text-[11px] tracking-[1.5px] text-white/50">
+                    HOUSE OF SHIRTS ADMIN
+                  </Text>
+                  <Text className="mt-3 font-bold text-[28px] leading-8 text-white">
+                    Open Atelier Dashboard
+                  </Text>
+                  <Text className="mt-3 font-normal text-[13px] leading-6 text-white/70">
+                    Review performance, recent orders, editorial updates, and
+                    workshop actions from one control room.
+                  </Text>
+                </View>
+
+                <View className="h-10 w-10 items-center justify-center bg-white">
+                  <Ionicons name="arrow-forward" size={18} color="#111111" />
+                </View>
+              </View>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View className="mb-16 px-6">
           <Pressable
@@ -384,7 +418,6 @@ const Profile = () => {
               Logout
             </Text>
           </Pressable>
-
         </View>
 
         <View className="items-center px-6 pb-12">
