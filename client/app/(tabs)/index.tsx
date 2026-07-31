@@ -1,4 +1,6 @@
 import { formatPrice } from "@/constants";
+import { AppText as Text } from "@/components/AppText";
+import { BrandLogo } from "@/components/BrandLogo";
 import { BrandTileSkeleton } from "@/components/loading/Skeleton";
 import { useAdminContentStore } from "@/stores/adminContentStore";
 import { useProductsStore } from "@/stores/productsStore";
@@ -12,7 +14,6 @@ import {
   Image,
   Pressable,
   ScrollView,
-  Text,
   TextInput,
   View,
   ImageBackground,
@@ -81,12 +82,7 @@ const Home = () => {
           >
             <Ionicons name="search" size={24} color={isDark ? "#ffffff" : "#000"} />
           </Pressable>
-          <Text
-            numberOfLines={1}
-            className="flex-1 px-3 text-center font-bold text-sm leading-6 tracking-[2.5px] text-black dark:text-white"
-          >
-            HOUSE OF SHIRTS
-          </Text>
+          <BrandLogo width={190} height={36} style={{ flex: 1 }} />
           <Pressable
             onPress={() => router.push("/notifications" as any)}
             className="relative w-10 items-end"
@@ -113,13 +109,13 @@ const Home = () => {
 
               <View className="mb-12 mt-auto z-10 px-6">
                 <Text className="mb-4 font-light text-xs tracking-widest text-white">
-                  {heroContent.overlayLabel.toUpperCase()}
+                  {heroContent.overlayLabel}
                 </Text>
                 <Text className="font-bold text-5xl leading-tight text-white">
-                  {heroContent.headline.toUpperCase()}
+                  {heroContent.headline}
                 </Text>
                 <Text className="mt-6 font-normal text-xs tracking-widest text-white/80">
-                  {heroContent.ctaText.toUpperCase()}
+                  {heroContent.ctaText}
                 </Text>
               </View>
             </ImageBackground>
@@ -132,7 +128,7 @@ const Home = () => {
               <Text className="font-light text-sm tracking-wider">
                 EDITOR&apos;S CHOICE
               </Text>
-              <Text className="font-bold text-xl tracking-wide text-black uppercase">
+              <Text className="font-bold text-xl tracking-wide text-black dark:text-white uppercase">
                 Trending Now
               </Text>
             </View>
@@ -176,7 +172,7 @@ const Home = () => {
                       resizeMode="cover"
                     />
                     <View className="absolute right-3 top-3 min-h-7 min-w-10 items-center justify-center rounded bg-white px-2 py-1">
-                      <Text className="font-bold text-[10px] leading-3 text-black dark:text-white">
+                      <Text className="font-bold text-[10px] leading-3 text-black">
                         NEW
                       </Text>
                     </View>
@@ -190,7 +186,7 @@ const Home = () => {
                       className="mb-3 font-bold text-sm text-black dark:text-white"
                       numberOfLines={2}
                     >
-                      {item.name.toUpperCase()}
+                      {item.name}
                     </Text>
                     <Text className="font-bold text-sm text-black dark:text-white">
                       {formatPrice(item.price)}
@@ -279,8 +275,8 @@ const Home = () => {
                   onPress={() => router.push(`/product/${item.id}` as any)}
                   className="flex-1"
                 >
-                  <View className="overflow-hidden rounded-lg bg-gray-50">
-                    <View className="relative h-56 w-full bg-gray-100">
+                  <View className="overflow-hidden bg-transparent">
+                    <View className="relative h-56 w-full bg-gray-100 dark:bg-neutral-900">
                       <Image
                         source={
                           typeof item.image === "string"
@@ -293,12 +289,12 @@ const Home = () => {
                     </View>
                     <View className="p-3">
                       <Text
-                        className="font-bold text-xs text-black"
+                        className="font-bold text-xs text-black dark:text-white"
                         numberOfLines={1}
                       >
-                        {item.name.toUpperCase()}
+                        {item.name}
                       </Text>
-                      <Text className="mt-2 font-bold text-sm text-black">
+                      <Text className="mt-2 font-bold text-sm text-black dark:text-white">
                         {formatPrice(item.price)}
                       </Text>
                     </View>
@@ -314,8 +310,8 @@ const Home = () => {
                   onPress={() => router.push(`/product/${item.id}` as any)}
                   className="flex-1"
                 >
-                  <View className="overflow-hidden rounded-lg bg-gray-50">
-                    <View className="relative h-56 w-full bg-gray-100">
+                  <View className="overflow-hidden bg-transparent">
+                    <View className="relative h-56 w-full bg-gray-100 dark:bg-neutral-900">
                       <Image
                         source={
                           typeof item.image === "string"
@@ -328,12 +324,12 @@ const Home = () => {
                     </View>
                     <View className="p-3">
                       <Text
-                        className="font-bold text-xs text-black"
+                        className="font-bold text-xs text-black dark:text-white"
                         numberOfLines={1}
                       >
-                        {item.name.toUpperCase()}
+                        {item.name}
                       </Text>
-                      <Text className="mt-2 font-bold text-sm text-black">
+                      <Text className="mt-2 font-bold text-sm text-black dark:text-white">
                         {formatPrice(item.price)}
                       </Text>
                     </View>
@@ -344,30 +340,30 @@ const Home = () => {
           </View>
         </View>
 
-        <View className="mx-6 mb-8 rounded-lg bg-gray-50 p-8">
-          <Text className="mb-3 font-light text-xs tracking-widest text-gray-600">
+        <View className="mx-6 mb-8 bg-gray-50 p-8 dark:bg-neutral-950">
+          <Text className="mb-3 font-light text-xs tracking-widest text-gray-600 dark:text-gray-400">
             EXCLUSIVE BENEFITS
           </Text>
-          <Text className="mb-4 font-bold text-2xl text-black">
+          <Text className="mb-4 font-bold text-2xl text-black dark:text-white">
             JOIN THE ATELIER
           </Text>
-          <Text className="mb-6 font-normal text-sm text-gray-600">
+          <Text className="mb-6 font-normal text-sm text-gray-600 dark:text-gray-400">
             Sign up to get insider access to collections and events
           </Text>
 
           <View className="flex-row">
-            <View className="flex-1 flex-row items-center border border-gray-300 bg-white px-4">
+            <View className="flex-1 flex-row items-center bg-white px-4 dark:bg-neutral-900">
               <TextInput
                 value={atelierEmail}
                 onChangeText={setAtelierEmail}
                 placeholder="Enter your email"
                 placeholderTextColor="#94a3b8"
                 keyboardType="email-address"
-                className="flex-1 py-3 font-normal text-black"
+                className="flex-1 py-3 font-normal text-black dark:text-white"
               />
             </View>
-            <Pressable className="items-center justify-center bg-black px-6 py-3">
-              <Text className="font-semibold text-xs tracking-widest text-white">
+            <Pressable className="items-center justify-center bg-black px-6 py-3 dark:bg-white">
+              <Text className="font-semibold text-xs tracking-widest text-white dark:text-black">
                 JOIN
               </Text>
             </Pressable>
