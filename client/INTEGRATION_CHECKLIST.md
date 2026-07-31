@@ -15,7 +15,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Added an accessibility foundation for shared customer/admin tabs, authentication forms, loading announcements, and OS reduced-motion preferences.
 - [x] Completed the customer shopping-flow accessibility pass for Home, Shop, product cards/details, Bag, shipping selection, and Checkout controls.
 - [x] Completed the post-purchase accessibility pass for customer orders/details, returns/exchanges, support, and notifications.
-- [ ] Complete accessibility review for profile/address, admin screens, focus, contrast, dynamic text, and touch targets.
+- [x] Completed the profile, Account & Privacy, saved-address, address-form, and address-selection accessibility pass.
+- [ ] Complete accessibility review for admin screens, focus, contrast, dynamic text, and touch targets.
 - [x] Removed unused Expo starter assets/scripts and bundled fake order/return records; normalized the public brand to “House of Shirts.”
 
 ## Authentication and accounts

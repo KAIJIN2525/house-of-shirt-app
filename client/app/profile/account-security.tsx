@@ -109,7 +109,7 @@ export default function AccountSecurityScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-[#050505]">
       <View className="flex-row items-center justify-between border-b border-black/10 px-6 py-4 dark:border-white/10">
-        <Pressable onPress={() => router.back()} hitSlop={12}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={12}>
           <Ionicons name="arrow-back" size={25} color={isDark ? "#fff" : "#000"} />
         </Pressable>
         <Text className="font-bold text-sm tracking-[2px] text-black dark:text-white">ACCOUNT & PRIVACY</Text>
@@ -125,7 +125,7 @@ export default function AccountSecurityScreen() {
             <Text className="text-sm text-gray-600 dark:text-white/70">{emailVerified ? "Verified" : "Verification required"}</Text>
           </View>
           {!emailVerified ? (
-            <Pressable disabled={isResending} onPress={() => void resendVerification()} className="mt-5 self-start bg-black px-5 py-3 dark:bg-white">
+            <Pressable disabled={isResending} onPress={() => void resendVerification()} accessibilityRole="button" accessibilityLabel="Resend verification email" accessibilityState={{ disabled: isResending, busy: isResending }} className="mt-5 self-start bg-black px-5 py-3 dark:bg-white">
               <Text className="font-bold text-xs tracking-[1px] text-white dark:text-black">{isResending ? "SENDING..." : "RESEND EMAIL"}</Text>
             </Pressable>
           ) : null}
@@ -134,7 +134,7 @@ export default function AccountSecurityScreen() {
         <View>
           <Text className="font-bold text-xs tracking-[1.5px] text-gray-500 dark:text-white/60">YOUR DATA</Text>
           <Text className="mt-3 text-sm leading-6 text-gray-600 dark:text-white/70">Download a JSON copy of your profile, addresses, orders, saved items, notifications, returns, restock requests, and support history. Payment tokens are excluded.</Text>
-          <Pressable disabled={isExporting} onPress={() => void exportData()} className="mt-5 items-center border border-black px-5 py-4 dark:border-white">
+          <Pressable disabled={isExporting} onPress={() => void exportData()} accessibilityRole="button" accessibilityLabel="Download my account data" accessibilityState={{ disabled: isExporting, busy: isExporting }} className="mt-5 items-center border border-black px-5 py-4 dark:border-white">
             <Text className="font-bold text-xs tracking-[1.2px] text-black dark:text-white">{isExporting ? "PREPARING EXPORT..." : "DOWNLOAD MY DATA"}</Text>
           </Pressable>
         </View>
@@ -143,12 +143,12 @@ export default function AccountSecurityScreen() {
           <Text className="font-bold text-xs tracking-[1.5px] text-red-700 dark:text-red-300">DELETE ACCOUNT</Text>
           <Text className="mt-3 text-sm leading-6 text-red-800 dark:text-red-200">This permanently removes your account and personal app data. Completed order records are retained without your identity.</Text>
           {usesPassword ? (
-            <TextInput value={password} onChangeText={setPassword} secureTextEntry placeholder="Current password" placeholderTextColor="#9ca3af" className="mt-5 border border-red-200 bg-white px-4 py-4 text-black dark:border-red-900 dark:bg-black dark:text-white" />
+            <TextInput accessibilityLabel="Current password" value={password} onChangeText={setPassword} secureTextEntry placeholder="Current password" placeholderTextColor="#9ca3af" className="mt-5 border border-red-200 bg-white px-4 py-4 text-black dark:border-red-900 dark:bg-black dark:text-white" />
           ) : (
             <Text className="mt-4 text-xs leading-5 text-red-700 dark:text-red-300">For social sign-in, sign out and sign back in if your last sign-in was more than ten minutes ago.</Text>
           )}
-          <TextInput value={confirmation} onChangeText={setConfirmation} autoCapitalize="characters" placeholder="Type DELETE" placeholderTextColor="#9ca3af" className="mt-3 border border-red-200 bg-white px-4 py-4 text-black dark:border-red-900 dark:bg-black dark:text-white" />
-          <Pressable disabled={confirmation !== "DELETE" || isDeleting} onPress={() => void deleteAccount()} className={`mt-4 items-center px-5 py-4 ${confirmation === "DELETE" && !isDeleting ? "bg-red-600" : "bg-red-300 dark:bg-red-950"}`}>
+          <TextInput accessibilityLabel="Account deletion confirmation" accessibilityHint="Type DELETE to enable permanent account deletion" value={confirmation} onChangeText={setConfirmation} autoCapitalize="characters" placeholder="Type DELETE" placeholderTextColor="#9ca3af" className="mt-3 border border-red-200 bg-white px-4 py-4 text-black dark:border-red-900 dark:bg-black dark:text-white" />
+          <Pressable disabled={confirmation !== "DELETE" || isDeleting} onPress={() => void deleteAccount()} accessibilityRole="button" accessibilityLabel="Permanently delete my account" accessibilityState={{ disabled: confirmation !== "DELETE" || isDeleting, busy: isDeleting }} className={`mt-4 items-center px-5 py-4 ${confirmation === "DELETE" && !isDeleting ? "bg-red-600" : "bg-red-300 dark:bg-red-950"}`}>
             <Text className="font-bold text-xs tracking-[1.2px] text-white">{isDeleting ? "DELETING..." : "DELETE MY ACCOUNT"}</Text>
           </Pressable>
         </View>

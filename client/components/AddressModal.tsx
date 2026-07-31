@@ -51,13 +51,13 @@ const AddressModal = ({
       onRequestClose={onClose}
     >
       <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-white rounded-t-3xl" style={{ maxHeight: "80%" }}>
+        <View accessibilityViewIsModal className="bg-white rounded-t-3xl" style={{ maxHeight: "80%" }}>
           {/* Header */}
           <View className="px-4 py-4 border-b border-gray-200 flex-row items-center justify-between">
             <Text className="font-bold text-xl text-slate-900">
               Select Address
             </Text>
-            <Pressable onPress={onClose}>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close address selection" hitSlop={10}>
               <Ionicons name="close" size={24} color="#0f172a" />
             </Pressable>
           </View>
@@ -66,6 +66,8 @@ const AddressModal = ({
             {/* Add New Button */}
             <Pressable
               onPress={() => setShowAddModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Add new address"
               className="border-2 border-dashed border-slate-300 py-4 rounded-lg flex-row items-center justify-center mb-4"
             >
               <Ionicons name="add-circle-outline" size={24} color="#64748b" />
@@ -79,6 +81,9 @@ const AddressModal = ({
               <Pressable
                 key={address.id}
                 onPress={() => handleSelect(address.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selectedId === address.id, selected: selectedId === address.id }}
+                accessibilityLabel={`${address.fullName}, ${address.address}, ${address.city}, ${address.state}${address.isDefault ? ", default address" : ""}`}
                 className={`border-2 rounded-lg p-4 mb-3 ${
                   selectedId === address.id
                     ? "border-slate-900 bg-slate-50"
@@ -112,7 +117,9 @@ const AddressModal = ({
 
                     {/* Edit Button */}
                     <Pressable
-                      onPress={() => handleEdit(address.id)}
+                      onPress={(event) => { event.stopPropagation(); handleEdit(address.id); }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Edit address for ${address.fullName}`}
                       className="mt-3 self-start"
                     >
                       <Text className="font-medium text-sm text-slate-900 underline">
@@ -156,6 +163,8 @@ const AddressModal = ({
             <View className="px-4 py-4 border-t border-gray-200">
               <Pressable
                 onPress={handleContinue}
+                accessibilityRole="button"
+                accessibilityLabel="Continue with selected address"
                 className="bg-slate-900 py-4 rounded-lg items-center"
               >
                 <Text className="font-semibold text-white text-base">

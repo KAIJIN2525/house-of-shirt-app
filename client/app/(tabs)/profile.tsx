@@ -95,7 +95,7 @@ const Profile = () => {
         <View className="flex-row items-center justify-between px-6 pb-6 pt-4">
           <Ionicons name="menu" size={24} color={isDark ? "#f8fafc" : "#000"} />
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/search" as any)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Search products" onPress={() => router.push("/search" as any)}>
             <Ionicons
               name="search"
               size={24}
@@ -161,7 +161,7 @@ const Profile = () => {
           </View>
 
           <View className="gap-0">
-            <Pressable
+            <Pressable accessibilityRole="button"
               className="border-b border-gray-100 py-4 dark:border-white/10"
               onPress={handleOrdersPress}
             >
@@ -180,7 +180,7 @@ const Profile = () => {
               </View>
             </Pressable>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               className="border-b border-gray-100 py-4 dark:border-white/10"
               onPress={() => router.push("/favorites" as any)}
             >
@@ -199,7 +199,7 @@ const Profile = () => {
               </View>
             </Pressable>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               className="border-b border-gray-100 py-4 dark:border-white/10"
               onPress={() => router.push("/profile/shipping-addresses" as any)}
             >
@@ -218,7 +218,7 @@ const Profile = () => {
               </View>
             </Pressable>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               className="border-b border-gray-100 py-4 dark:border-white/10"
               onPress={() => router.push("/profile/account-security" as any)}
             >
@@ -268,7 +268,7 @@ const Profile = () => {
                   {themeOptions.map((option) => {
                     const isSelected = themeMode === option.id;
                     return (
-                      <Pressable
+                      <Pressable accessibilityRole="button"
                         key={option.id}
                         onPress={() => void setThemeMode(option.id)}
                         className={`px-3 py-2 ${
@@ -316,7 +316,7 @@ const Profile = () => {
                   {textTransformOptions.map((option) => {
                     const isSelected = textTransformMode === option.id;
                     return (
-                      <Pressable
+                      <Pressable accessibilityRole="button"
                         key={option.id}
                         onPress={() => {
                           void setTextTransformMode(option.id);
@@ -344,7 +344,7 @@ const Profile = () => {
               </View>
             </View>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               className="border-b border-gray-100 py-4 dark:border-white/10"
               onPress={() => router.push("/returns" as any)}
             >
@@ -366,7 +366,7 @@ const Profile = () => {
               </View>
             </Pressable>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               className="py-4 dark:border-white/10"
               onPress={() => router.push("/contact" as any)}
             >
@@ -398,7 +398,7 @@ const Profile = () => {
               <View className="w-10 border border-black dark:border-white" />
             </View>
 
-            <Pressable
+            <Pressable accessibilityRole="button"
               className="bg-[#1f2736] px-5 py-5"
               onPress={() => router.push("/admin" as any)}
             >
@@ -425,7 +425,7 @@ const Profile = () => {
         ) : null}
 
         <View className="mb-16 px-6">
-          <Pressable
+          <Pressable accessibilityRole="button"
             className="flex-row items-center gap-2"
             onPress={async () => {
               await signOut();

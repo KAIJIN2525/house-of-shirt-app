@@ -45,7 +45,7 @@ const ShippingAddresses = () => {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-[#050505]">
       <View className="px-4 py-4 border-b border-gray-200 flex-row items-center dark:border-white/10">
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color={isDark ? "#ffffff" : "#0f172a"} />
         </Pressable>
         <Text className="font-bold text-xl text-slate-900 ml-4 dark:text-white">
@@ -57,6 +57,8 @@ const ShippingAddresses = () => {
         {/* Add New Address Button */}
         <Pressable
           onPress={() => setShowAddModal(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Add new shipping address"
           className="flex-row items-center justify-center bg-slate-900 rounded-md py-4 mb-6 dark:bg-white"
         >
           <Ionicons name="add" size={24} color={isDark ? "#000000" : "white"} />
@@ -98,7 +100,9 @@ const ShippingAddresses = () => {
             <View className="flex-row gap-2 mt-4">
               <Pressable
                 onPress={() => handleEdit(address.id)}
-                className="w-10 h-10 border border-slate-900 rounded-lg items-center justify-center"
+                accessibilityRole="button"
+                accessibilityLabel={`Edit address for ${address.fullName}`}
+                className="w-11 h-11 border border-slate-900 rounded-lg items-center justify-center"
               >
                 <Ionicons name="pencil-outline" size={18} color="#0f172a" />
               </Pressable>
@@ -106,7 +110,9 @@ const ShippingAddresses = () => {
               {!address.isDefault && (
                 <Pressable
                   onPress={() => setDefaultAddress(address.id)}
-                  className="w-10 h-10 border border-green-500 rounded-lg items-center justify-center"
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set ${address.fullName} address as default`}
+                  className="w-11 h-11 border border-green-500 rounded-lg items-center justify-center"
                 >
                   <Ionicons name="star-outline" size={18} color="#22c55e" />
                 </Pressable>
@@ -114,7 +120,9 @@ const ShippingAddresses = () => {
 
               <Pressable
                 onPress={() => handleDelete(address.id)}
-                className="w-10 h-10 border border-red-300 rounded-lg items-center justify-center"
+                accessibilityRole="button"
+                accessibilityLabel={`Delete address for ${address.fullName}`}
+                className="w-11 h-11 border border-red-300 rounded-lg items-center justify-center"
               >
                 <Ionicons name="trash-outline" size={18} color="#ef4444" />
               </Pressable>

@@ -8,7 +8,7 @@ import {
 } from "@/services/google-places";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Modal,
@@ -172,13 +172,13 @@ const AddressFormModal = ({
       onRequestClose={onClose}
     >
       <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-white dark:bg-[#0F1113] rounded-t-3xl h-[90%]" >
+        <View accessibilityViewIsModal className="bg-white dark:bg-[#0F1113] rounded-t-3xl h-[90%]" >
           {/* Modal Header */}
           <View className="px-4 py-4 border-b border-gray-200 dark:border-white/10 flex-row items-center justify-between">
             <Text className="font-bold text-xl text-slate-900 dark:text-white">
               {editingId ? "Edit Address" : "Add New Address"}
             </Text>
-            <Pressable onPress={onClose}>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close address form" hitSlop={10}>
               <Ionicons name="close" size={24} color={isDark ? "#ffffff" : "#0f172a"} />
             </Pressable>
           </View>
@@ -194,6 +194,7 @@ const AddressFormModal = ({
               </Text>
               <TextInput
                 value={fullName}
+                accessibilityLabel="Full name"
                 onChangeText={setFullName}
                 placeholder="John Doe"
                 placeholderTextColor="#94a3b3"
@@ -208,6 +209,7 @@ const AddressFormModal = ({
               </Text>
               <TextInput
                 value={phoneNumber}
+                accessibilityLabel="Phone number"
                 onChangeText={setPhoneNumber}
                 placeholder="08012345678"
                 placeholderTextColor="#94a3b8"
@@ -225,6 +227,7 @@ const AddressFormModal = ({
               <View className="relative">
                 <TextInput
                   value={address}
+                  accessibilityLabel="Street address"
                   onChangeText={handleAddressChange}
                   placeholder="123 Main Street, Apartment 4B"
                   placeholderTextColor="#94a3b8"
@@ -258,6 +261,8 @@ const AddressFormModal = ({
                       <Pressable
                         key={p.place_id}
                         onPress={() => handleSelectPrediction(p)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${p.structured_formatting.main_text}, ${p.structured_formatting.secondary_text}`}
                         className="px-4 py-4 border-b border-gray-100 dark:border-white/5 active:bg-gray-50 dark:active:bg-white/5"
                       >
                         <Text className="font-bold text-sm text-slate-900 dark:text-white">
@@ -280,6 +285,7 @@ const AddressFormModal = ({
               </Text>
               <TextInput
                 value={apartment}
+                accessibilityLabel="Apartment, suite, unit, or estate details"
                 onChangeText={setApartment}
                 placeholder="e.g. Flat 4, Dpkay Estate Gate"
                 placeholderTextColor="#94a3b8"
@@ -297,6 +303,7 @@ const AddressFormModal = ({
               </Text>
               <TextInput
                 value={city}
+                accessibilityLabel="City"
                 onChangeText={setCity}
                 placeholder="Lagos"
                 placeholderTextColor="#94a3b8"
@@ -311,7 +318,8 @@ const AddressFormModal = ({
               </Text>
               <View className="border border-gray-300 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-[#101215]">
                 <Picker 
-                  selectedValue={state} 
+                  selectedValue={state}
+                  accessibilityLabel="State"
                   onValueChange={setState}
                   dropdownIconColor={isDark ? "white" : "black"}
                   style={{ color: isDark ? "white" : "black" }}
@@ -331,6 +339,7 @@ const AddressFormModal = ({
               </Text>
               <TextInput
                 value={zipCode}
+                accessibilityLabel="Zip code"
                 onChangeText={setZipCode}
                 placeholder="100001"
                 placeholderTextColor="#94a3b8"
@@ -341,6 +350,9 @@ const AddressFormModal = ({
             {/* Default Toggle */}
             <Pressable
               onPress={() => setIsDefault(!isDefault)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: isDefault }}
+              accessibilityLabel="Set as default address"
               className="flex-row items-center justify-between py-4 border-t border-gray-200 dark:border-white/10 mb-4"
             >
               <View>
@@ -368,6 +380,8 @@ const AddressFormModal = ({
           <View className="px-4 py-4 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F1113]">
             <Pressable
               onPress={handleSave}
+              accessibilityRole="button"
+              accessibilityLabel={editingId ? "Update address" : "Save address"}
               className="bg-slate-900 dark:bg-white py-4 rounded-lg items-center"
             >
               <Text className="font-semibold text-white dark:text-black text-base">
