@@ -91,7 +91,7 @@ const Login = () => {
             {/* Logo/Brand Section */}
             <View className="items-center mb-12">
               <Text className="font-bold text-3xl text-slate-900 mb-2">
-                House of Shirt
+                House of Shirts
               </Text>
             </View>
 

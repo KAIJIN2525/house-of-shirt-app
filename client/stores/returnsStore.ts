@@ -81,58 +81,10 @@ interface ReturnsState {
   processRefund: (id: string) => void;
 }
 
-const starterRequest: ReturnRequestRecord = {
-  id: "return-8839021",
-  customerName: "Devoer Smith",
-  orderId: "HS-89201",
-  type: "return",
-  status: "In Transit",
-  rmaNumber: "8839021",
-  submittedAt: "Oct 12, 2023",
-  items: [
-    {
-      id: "item-1",
-      title: "The Essential Poplin",
-      subtitle: "SKU: HS-POP-WH-42 | Size: 15.5 / 33",
-      price: 14500,
-      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400",
-      reason: "The fit is significantly larger than previous purchases.",
-    },
-  ],
-  itemTitle: "The Oxford Classic",
-  itemSubtitle: "WHITE / SLIM FIT / 15.5",
-  itemPrice: 185000,
-  itemImage: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400",
-  customerPhotoUrls: [
-    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=400",
-    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-  ],
-  returnLabelCode: "HOS-RTN-8839021",
-  returnLabelIssuedAt: "Oct 12, 2023",
-  reason: "Too large in shoulders",
-  comments: "",
-  adminNotes: [
-    {
-      id: "note-1",
-      author: "Julian Anderson",
-      role: "Customer Service Lead",
-      timestamp: "12 Oct, 01:26 AM",
-      message: "Customer is a regular buyer.",
-    },
-  ],
-  read: false,
-  timeline: [
-    { id: "1", title: "Return Requested", description: "October 12, 2023 - 09:45 AM", active: true },
-    { id: "2", title: "Item Received", description: "Arriving at warehouse Oct 16", active: true },
-    { id: "3", title: "Quality Check", description: "Pending inspection by Atelier team", active: false },
-    { id: "4", title: "Refund Processed", description: "Credit will appear in 3-5 business days", active: false },
-  ],
-};
-
 const useReturnsStoreBase = create<ReturnsState>()(
   persist(
     (set, get) => ({
-      requests: [starterRequest],
+      requests: [],
       getRequestById: (id) => get().requests.find((request) => request.id === id),
       createRequest: async (input) => {
         const requestItems = input.items?.length

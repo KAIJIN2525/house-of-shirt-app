@@ -129,4 +129,4 @@ See [INTEGRATION_CHECKLIST.md](./INTEGRATION_CHECKLIST.md) for readiness and [CH
 
 ## Naming
 
-The Expo display name is **House of Shirts**, while the package and older copy sometimes use **House of Shirt**. Choose one public name before store submission and align the app, documentation, Shopify branding, deep links, and notification copy.
+The public brand name is **House of Shirts**. Existing package identifiers and the `houseofshirt` URL scheme remain stable for installed-app compatibility.

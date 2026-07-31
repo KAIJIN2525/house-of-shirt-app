@@ -13,7 +13,7 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Full in-app administration route group.
 - [ ] Add unit, integration, and end-to-end tests plus CI checks.
 - [ ] Complete accessibility review: screen readers, focus, contrast, dynamic text, and reduced motion.
-- [ ] Remove remaining starter/demo assets and normalize “House of Shirt” versus “House of Shirts.”
+- [x] Removed unused Expo starter assets/scripts and bundled fake order/return records; normalized the public brand to “House of Shirts.”
 
 ## Authentication and accounts
 
