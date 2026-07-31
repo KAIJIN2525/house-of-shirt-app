@@ -53,6 +53,9 @@ const ProductItem = React.memo(({ item, viewMode, onPress }: { item: Product, vi
     return (
       <Pressable
         onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.brand ?? "House of Shirts"}, ${item.name}, ${formatPrice(item.price)}`}
+        accessibilityHint="Opens product details"
         className="flex-row bg-white dark:bg-[#101215] rounded-xl overflow-hidden mb-3 border border-gray-200 dark:border-white/10"
       >
         <Image
@@ -81,6 +84,9 @@ const ProductItem = React.memo(({ item, viewMode, onPress }: { item: Product, vi
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.brand ?? "House of Shirts"}, ${item.name}, ${formatPrice(item.price)}`}
+      accessibilityHint="Opens product details"
       className="flex-1 overflow-hidden mb-6"
     >
       <View className="bg-gray-100 dark:bg-white/5 aspect-[3/4] overflow-hidden">
@@ -113,7 +119,7 @@ const Shop = () => {
 
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { products, fetchProducts, isLoading, getBestSellingProducts } = useProductsStore();
+  const { products, fetchProducts } = useProductsStore();
   const { brands: collectiveBrands } = useAdminContentStore();
   const { isDark } = useThemeStore();
   const [refreshing, setRefreshing] = useState(false);
@@ -127,7 +133,7 @@ const Shop = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const [selectedCategory, setSelectedCategory] = useState("1");
   const [selectedBrand, setSelectedBrand] = useState("All Brands");
@@ -214,6 +220,8 @@ const Shop = () => {
             contentContainerStyle={{ gap: 8 }}
             renderItem={({ item }) => (
               <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedBrand.trim().toLowerCase() === item.trim().toLowerCase() }}
                 onPress={() => {
                   setSelectedBrand(item);
                   // Optionally clean up router search params if they exist
@@ -253,6 +261,8 @@ const Shop = () => {
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => setSelectedCategory(item.id)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedCategory === item.id }}
                 className={`flex-row items-center px-6 py-3 ${
                   selectedCategory === item.id
                     ? "bg-black dark:bg-white"
@@ -294,6 +304,8 @@ const Shop = () => {
 
           <Pressable
             onPress={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+            accessibilityRole="button"
+            accessibilityLabel={`Switch to ${viewMode === "grid" ? "list" : "grid"} view`}
             className="h-10 w-10 items-center justify-center border border-gray-100 dark:border-white/10"
           >
             <Ionicons
@@ -338,7 +350,7 @@ const Shop = () => {
       {/* Top Navigation */}
       <View className="flex-row items-center justify-between px-6 pt-4 pb-4 border-b border-gray-100 dark:border-white/10">
 
-        <Pressable onPress={() => router.push("/search" as any)}>
+        <Pressable onPress={() => router.push("/search" as any)} accessibilityRole="button" accessibilityLabel="Search products">
           <Ionicons
             name="search"
             size={16}
@@ -352,7 +364,7 @@ const Shop = () => {
           </Text>
         </View>
 
-        <Pressable onPress={() => router.push("/notifications" as any)}>
+        <Pressable onPress={() => router.push("/notifications" as any)} accessibilityRole="button" accessibilityLabel="Open notifications">
           <Ionicons
             name="notifications-outline"
             size={20}

@@ -34,6 +34,9 @@ const ProductGrid = ({ products }: ProductGridProps) => {
         <Pressable
           key={item.id}
           onPress={() => router.push(`/product/${item.id}` as any)}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.brand ?? "House of Shirts"}, ${item.name}, ${formatPrice(item.price)}`}
+          accessibilityHint="Opens product details"
           style={{ width: "48%" }}
           className="overflow-hidden mb-4"
         >
@@ -41,6 +44,7 @@ const ProductGrid = ({ products }: ProductGridProps) => {
             source={{ uri: item.image }}
             className="w-full h-60"
             resizeMode="cover"
+            accessible={false}
           />
           <View className="p-3">
             <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-[1.5px]">

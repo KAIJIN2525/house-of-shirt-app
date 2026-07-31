@@ -62,6 +62,8 @@ const FeaturedCategories = () => {
           <Pressable
             key={category.id}
             onPress={() => handleCategoryPress(category.filter)}
+            accessibilityRole="button"
+            accessibilityLabel={`Shop ${category.name}`}
             className="rounded-2xl overflow-hidden"
             style={{ width: "48%", height: 140 }}
           >
@@ -69,6 +71,7 @@ const FeaturedCategories = () => {
               source={{ uri: category.image }}
               style={{ width: "100%", height: "100%" }}
               resizeMode="cover"
+              accessible={false}
             />
             <View className="absolute inset-0 bg-black/30 justify-end p-4">
               <Text className="font-bold text-white text-lg">

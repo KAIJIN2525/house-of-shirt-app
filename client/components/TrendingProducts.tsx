@@ -20,7 +20,7 @@ const TrendingProducts = () => {
         <Text className="font-bold text-xl text-slate-900 dark:text-white">
           Trending Now
         </Text>
-        <Pressable onPress={() => router.push("/(tabs)/shop" as any)}>
+        <Pressable onPress={() => router.push("/(tabs)/shop" as any)} accessibilityRole="button" accessibilityLabel="See all trending products">
           <Text className="font-medium text-slate-600 dark:text-neutral-400 text-sm">
             See All →
           </Text>
@@ -36,6 +36,9 @@ const TrendingProducts = () => {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => router.push(`/product/${item.id}` as any)}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.brand ?? "House of Shirts"}, ${item.name}, ${formatPrice(item.price)}, rated ${item.rating} out of 5`}
+            accessibilityHint="Opens product details"
             className="bg-white dark:bg-transparent rounded-xl overflow-hidden"
             style={{ width: 160 }}
           >
@@ -43,6 +46,7 @@ const TrendingProducts = () => {
               source={{ uri: item.image }}
               style={{ width: 160, height: 180 }}
               resizeMode="cover"
+              accessible={false}
             />
             <View className="p-3 dark:bg-transparent">
               <Text className="text-xs text-gray-500 uppercase font-normal">

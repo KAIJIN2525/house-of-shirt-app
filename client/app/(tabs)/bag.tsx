@@ -136,7 +136,7 @@ const Bag = () => {
       <View className="flex-row items-center justify-between px-6 pb-6 pt-4">
         <Ionicons name="menu" size={24} color={isDark ? "#ffffff" : "#000000"} />
         <BrandLogo width={154} height={28} />
-        <Pressable onPress={() => router.push("/search" as any)}>
+        <Pressable onPress={() => router.push("/search" as any)} accessibilityRole="button" accessibilityLabel="Search products">
           <Ionicons name="search" size={24} color={isDark ? "#ffffff" : "#000000"} />
         </Pressable>
       </View>
@@ -205,6 +205,8 @@ const Bag = () => {
                           onPress={() =>
                             updateQuantity(item.id, item.quantity - 1)
                           }
+                          accessibilityRole="button"
+                          accessibilityLabel={`Decrease quantity of ${item.name}`}
                         >
                           <Text className="px-2 font-bold text-sm text-black dark:text-white">
                             -
@@ -217,6 +219,8 @@ const Bag = () => {
                           onPress={() =>
                             updateQuantity(item.id, item.quantity + 1)
                           }
+                          accessibilityRole="button"
+                          accessibilityLabel={`Increase quantity of ${item.name}`}
                         >
                           <Text className="px-2 font-bold text-sm text-black dark:text-white">
                             +
@@ -233,6 +237,8 @@ const Bag = () => {
                   {/* Remove Button */}
                   <Pressable
                     onPress={() => removeFromBag(item.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${item.name} from bag`}
                     className="h-8 w-8 items-center justify-center"
                   >
                     <Ionicons name="close" size={20} color={isDark ? "#cbd5e1" : "#94a3b8"} />
@@ -261,6 +267,8 @@ const Bag = () => {
               {/* Shipping */}
               <Pressable
                 onPress={() => void loadShippingOptions()}
+                accessibilityRole="button"
+                accessibilityLabel={selectedShipping ? `Shipping, ${selectedShipping.title}, ${formatPrice(shippingCost)}` : "Select shipping method"}
                 className="flex-row items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-white/10"
               >
                 <View>
@@ -290,6 +298,8 @@ const Bag = () => {
             {/* Proceed to Checkout Button - Full Width */}
             <Pressable
               onPress={handleProceedToCheckout}
+              accessibilityRole="button"
+              accessibilityLabel="Proceed to checkout"
               className="mx-6 rounded-lg bg-black py-4 dark:bg-white"
             >
               <Text className="font-bold text-xs text-white text-center tracking-widest dark:text-black">
@@ -319,7 +329,7 @@ const Bag = () => {
                   <Text className="font-bold text-lg text-black dark:text-white">
                     Select Shipping
                   </Text>
-                  <Pressable onPress={() => setShowShippingModal(false)}>
+                  <Pressable onPress={() => setShowShippingModal(false)} accessibilityRole="button" accessibilityLabel="Close shipping options">
                     <Ionicons name="close" size={24} color={isDark ? "#ffffff" : "#000"} />
                   </Pressable>
                 </View>
@@ -335,7 +345,7 @@ const Bag = () => {
                         </Text>
                       </View>
                     ) : shippingError ? (
-                      <View className="rounded-2xl bg-red-50 p-4 dark:bg-red-950/30">
+                      <View accessibilityRole="alert" accessibilityLiveRegion="assertive" className="rounded-2xl bg-red-50 p-4 dark:bg-red-950/30">
                         <Text className="text-sm leading-5 text-red-700 dark:text-red-300">
                           {shippingError}
                         </Text>
@@ -363,6 +373,9 @@ const Bag = () => {
                       <Pressable
                         key={`${option.groupId}-${option.handle}`}
                         onPress={() => void handleShippingSelect(option)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: selectedShipping?.handle === option.handle, checked: selectedShipping?.handle === option.handle }}
+                        accessibilityLabel={`${option.title}, ${option.description || "delivery option"}, ${formatPrice(option.amount)}`}
                         className={`flex-row items-center gap-3 p-4 rounded-2xl ${
                           selectedShipping?.handle === option.handle
                             ? "bg-slate-100 dark:bg-white/10"

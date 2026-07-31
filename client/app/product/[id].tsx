@@ -374,6 +374,8 @@ export default function ProductDetails() {
             <View className="flex-row justify-between px-4">
               <Pressable
                 onPress={() => router.back()}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
                 className="h-10 w-10 items-center justify-center rounded-full bg-white/90"
               >
                 <Ionicons name="arrow-back" size={20} color="#0f172a" />
@@ -381,6 +383,8 @@ export default function ProductDetails() {
 
               <Pressable
                 onPress={handleShare}
+                accessibilityRole="button"
+                accessibilityLabel={`Share ${product.name}`}
                 className="h-10 w-10 items-center justify-center rounded-full bg-white/90"
               >
                 <Ionicons
@@ -421,7 +425,7 @@ export default function ProductDetails() {
                 <Text className="text-base font-semibold text-slate-900 dark:text-white">
                   Select Size
                 </Text>
-                <Pressable onPress={() => setShowFitGuide(true)}>
+                <Pressable onPress={() => setShowFitGuide(true)} accessibilityRole="button" accessibilityLabel="Open fit guide">
                   <Text className="text-xs font-bold uppercase tracking-[1.2px] text-slate-900 dark:text-white">
                     Fit guide
                   </Text>
@@ -435,6 +439,9 @@ export default function ProductDetails() {
                   return (
                     <Pressable
                       key={sizeOption.value}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Size ${sizeOption.value}${isUnavailable ? ", unavailable" : ""}`}
+                      accessibilityState={{ selected: isSelected, disabled: isUnavailable }}
                       onPress={() =>
                         isUnavailable
                           ? void handleUnavailableSizePress(sizeOption.value)
@@ -476,6 +483,9 @@ export default function ProductDetails() {
                 {product.colors?.map((color) => (
                   <Pressable
                     key={color}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Color ${color}`}
+                    accessibilityState={{ selected: selectedColor === color }}
                     onPress={() => setSelectedColor(color)}
                     className={`rounded-lg px-4 py-2 ${
                       selectedColor === color
@@ -564,6 +574,9 @@ export default function ProductDetails() {
           <Pressable
             onPress={handleAddToBag}
             disabled={isAdding}
+            accessibilityRole="button"
+            accessibilityLabel={`Add ${product.name} to bag`}
+            accessibilityState={{ disabled: isAdding, busy: isAdding }}
             className={`h-14 flex-1 flex-row items-center justify-center rounded-xl ${
               isAdding ? "bg-gray-300 dark:bg-white/10" : "bg-slate-900 dark:bg-white"
             }`}
@@ -584,6 +597,9 @@ export default function ProductDetails() {
 
           <Pressable
             onPress={handleFavoriteToggle}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite(product.id) ? `Remove ${product.name} from favorites` : `Add ${product.name} to favorites`}
+            accessibilityState={{ selected: isFavorite(product.id) }}
             className="h-14 w-14 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10"
           >
             <Ionicons

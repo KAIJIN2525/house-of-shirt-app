@@ -13,7 +13,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Full in-app administration route group.
 - [ ] Add unit, integration, and end-to-end tests plus CI checks.
 - [x] Added an accessibility foundation for shared customer/admin tabs, authentication forms, loading announcements, and OS reduced-motion preferences.
-- [ ] Complete the remaining screen-by-screen accessibility review: labels, focus, contrast, dynamic text, and touch targets.
+- [x] Completed the customer shopping-flow accessibility pass for Home, Shop, product cards/details, Bag, shipping selection, and Checkout controls.
+- [ ] Complete accessibility review for post-purchase, profile/address, admin screens, focus, contrast, dynamic text, and touch targets.
 - [x] Removed unused Expo starter assets/scripts and bundled fake order/return records; normalized the public brand to “House of Shirts.”
 
 ## Authentication and accounts

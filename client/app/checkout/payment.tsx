@@ -79,9 +79,6 @@ const CheckoutPaymentScreen = () => {
     if (!cartId || !checkoutUrl || !initialDelivery) return null;
     return { cartId, checkoutUrl, deliveryOptions: [initialDelivery] };
   }, [initialDelivery, params.shopifyCartId, params.shopifyCheckoutUrl]);
-  const [checkoutSession, setCheckoutSession] = useState<ShopifyCheckoutSession | null>(
-    initialCheckoutSession,
-  );
   const [selectedDelivery, setSelectedDelivery] = useState<ShopifyDeliveryOption | null>(
     initialDelivery,
   );
@@ -164,6 +161,10 @@ const CheckoutPaymentScreen = () => {
   }, [defaultAddress]);
 
   const prepareCheckout = useCallback(async (customerAccessToken?: string) => {
+    if (initialCheckoutSession && selectedDelivery) {
+      shopifyCheckout.preload(initialCheckoutSession.checkoutUrl);
+      return initialCheckoutSession;
+    }
     if (!defaultAddress || bagItems.length === 0) return null;
     setIsLoadingDelivery(true);
     setCheckoutError("");
@@ -205,7 +206,6 @@ const CheckoutPaymentScreen = () => {
         ) ?? session.deliveryOptions[0];
       const checkoutUrl = await selectShopifyDeliveryOption(session.cartId, delivery);
       const readySession = { ...session, checkoutUrl };
-      setCheckoutSession(readySession);
       setSelectedDelivery(delivery);
       shopifyCheckout.preload(checkoutUrl);
       return readySession;
@@ -217,6 +217,8 @@ const CheckoutPaymentScreen = () => {
       setIsLoadingDelivery(false);
     }
   }, [
+    initialCheckoutSession,
+    selectedDelivery,
     bagItems,
     defaultAddress,
     quotedShippingCost,
@@ -294,7 +296,7 @@ const CheckoutPaymentScreen = () => {
       >
         <View className="flex-row items-center justify-between px-6 pb-5 pt-4">
           <BrandLogo width={154} height={28} />
-          <Pressable onPress={() => router.push("/search" as any)}>
+          <Pressable onPress={() => router.push("/search" as any)} accessibilityRole="button" accessibilityLabel="Search products">
             <Ionicons name="search" size={18} color={isDark ? "#ffffff" : "#111111"} />
           </Pressable>
         </View>
@@ -315,6 +317,8 @@ const CheckoutPaymentScreen = () => {
             </Text>
             <Pressable
               onPress={() => router.push("/profile/shipping-addresses" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit shipping address"
             >
               <Text className="font-bold text-[10px] tracking-[1.3px] text-neutral-500">
                 EDIT
@@ -403,9 +407,10 @@ const CheckoutPaymentScreen = () => {
               placeholderTextColor="#9ca3af"
               value={promoCode}
               onChangeText={setPromoCode}
+              accessibilityLabel="Promo code"
               className="flex-1 py-3 font-normal text-[12px] text-black dark:text-white"
             />
-            <Pressable onPress={handleApplyPromo} className="bg-black px-4 py-2 rounded-lg dark:bg-white">
+            <Pressable onPress={handleApplyPromo} accessibilityRole="button" accessibilityLabel="Apply promo code" className="bg-black px-4 py-2 rounded-lg dark:bg-white">
               <Text className="font-bold text-[10px] tracking-[1px] text-white dark:text-black">APPLY</Text>
             </Pressable>
           </View>
@@ -488,6 +493,9 @@ const CheckoutPaymentScreen = () => {
           <Pressable
             onPress={handlePlaceOrder}
             disabled={isProcessingPayment || isLoadingDelivery || bagItems.length === 0 || !defaultAddress}
+            accessibilityRole="button"
+            accessibilityLabel="Continue to secure checkout"
+            accessibilityState={{ disabled: isProcessingPayment || isLoadingDelivery || bagItems.length === 0 || !defaultAddress, busy: isProcessingPayment || isLoadingDelivery }}
             className={`bg-black py-4 flex-row justify-center items-center gap-2 ${
               isProcessingPayment || isLoadingDelivery || bagItems.length === 0 || !defaultAddress
                 ? "opacity-50"

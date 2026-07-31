@@ -80,6 +80,8 @@ const Home = () => {
         <View className="flex-row items-center px-6 pb-4 pt-4">
           <Pressable
             onPress={() => router.push("/search" as any)}
+            accessibilityRole="button"
+            accessibilityLabel="Search products"
             className="w-10 items-start"
           >
             <Ionicons
@@ -91,6 +93,8 @@ const Home = () => {
           <BrandLogo width={190} height={36} style={{ flex: 1 }} />
           <Pressable
             onPress={() => router.push("/notifications" as any)}
+            accessibilityRole="button"
+            accessibilityLabel={`Notifications${unreadNotificationCount > 0 ? `, ${unreadNotificationCount} unread` : ""}`}
             className="relative w-10 items-end"
           >
             <Ionicons
@@ -108,7 +112,7 @@ const Home = () => {
           </Pressable>
         </View>
 
-        <Pressable onPress={handleHeroPress}>
+        <Pressable onPress={handleHeroPress} accessibilityRole="button" accessibilityLabel={`${heroContent.headline}. ${heroContent.ctaText}`}>
           <View className="mb-8 h-[450px] overflow-hidden">
             <ImageBackground
               source={heroImageSource}
@@ -145,6 +149,8 @@ const Home = () => {
             <View className="flex-row gap-2">
               <Pressable
                 onPress={() => handleTrendingScroll("left")}
+                accessibilityRole="button"
+                accessibilityLabel="Previous trending products"
                 className="h-8 w-8 items-center justify-center"
               >
                 <Ionicons
@@ -155,6 +161,8 @@ const Home = () => {
               </Pressable>
               <Pressable
                 onPress={() => handleTrendingScroll("right")}
+                accessibilityRole="button"
+                accessibilityLabel="Next trending products"
                 className="h-8 w-8 items-center justify-center"
               >
                 <Ionicons
@@ -176,6 +184,9 @@ const Home = () => {
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => router.push(`/product/${item.id}` as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.brand ?? "House of Shirts"}, ${item.name}, ${formatPrice(item.price)}`}
+                accessibilityHint="Opens product details"
                 className="w-48"
               >
                 <View className="overflow-hidden">
