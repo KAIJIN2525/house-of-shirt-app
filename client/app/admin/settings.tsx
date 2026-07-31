@@ -176,6 +176,11 @@ export default function AdminSettingsScreen() {
               title="Shopify synchronization"
               description="Review sync health, logs, webhooks, and manual refreshes."
               onPress={() => router.push("/admin/shopify-sync" as any)}
+            />            <SettingsLink
+              icon="shield-checkmark-outline"
+              title="Audit history"
+              description="Review immutable staff changes to orders, customers, content, access, and campaigns."
+              onPress={() => router.push("/admin/audit-log" as any)}
             />
           </View>
         </View>

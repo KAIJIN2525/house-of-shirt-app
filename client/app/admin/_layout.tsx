@@ -85,6 +85,7 @@ export default function AdminLayout() {
         <Tabs.Screen name="restock-requests" options={{ href: null }} />
         <Tabs.Screen name="support/[id]" options={{ href: null }} />
         <Tabs.Screen name="staff-access" options={{ href: null }} />
+        <Tabs.Screen name="audit-log" options={{ href: null }} />
       </Tabs>
     </AdminRouteGate>
   );

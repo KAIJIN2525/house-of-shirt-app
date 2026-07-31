@@ -557,25 +557,48 @@ const useAdminContentStoreBase = create<AdminContentState>()(
         set({ isLoadingTemplates: true });
         try {
           const { supabase } = await import("@/lib/supabase");
-          const { data, error } = await supabase
-            .from("notification_templates")
-            .select("*")
-            .order("created_at", { ascending: false });
+          const [templatesResult, campaignsResult] = await Promise.all([
+            supabase
+              .from("notification_templates")
+              .select("*")
+              .order("created_at", { ascending: false }),
+            supabase
+              .from("notification_campaigns")
+              .select("*")
+              .order("created_at", { ascending: false })
+              .limit(100),
+          ]);
 
-          if (error) throw error;
+          if (templatesResult.error) throw templatesResult.error;
+          if (campaignsResult.error) throw campaignsResult.error;
 
-          if (data) {
-            set({
-              notificationTemplates: data.map((t: any) => ({
-                id: t.id,
-                eventKey: t.event_key,
-                title: t.title,
-                body: t.body,
-                createdAt: t.created_at,
-                updatedAt: t.updated_at,
-              })),
-            });
-          }
+          set({
+            notificationTemplates: (templatesResult.data ?? []).map(
+              (template: any) => ({
+                id: template.id,
+                eventKey: template.event_key,
+                title: template.title,
+                body: template.body,
+                createdAt: template.created_at,
+                updatedAt: template.updated_at,
+              }),
+            ),
+            notificationCampaigns: (campaignsResult.data ?? []).map(
+              (campaign: any) => ({
+                id: campaign.id,
+                title: campaign.title,
+                message: campaign.message,
+                audience: campaign.audience,
+                status: campaign.status,
+                scheduledFor: campaign.scheduled_for_text,
+                sentAt: campaign.sent_at
+                  ? new Date(campaign.sent_at).toLocaleString()
+                  : "",
+                targetType: campaign.target_type,
+                targetValue: campaign.target_value ?? "",
+              }),
+            ),
+          });
         } catch (error) {
           console.error("Error fetching templates:", error);
         } finally {
@@ -660,27 +683,56 @@ const useAdminContentStoreBase = create<AdminContentState>()(
       saveBrands: (brands) => set({ brands }),
 
       sendNotificationCampaign: async (input) => {
+        const { supabase } = await import("@/lib/supabase");
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("Authentication required");
+
+        const status: NotificationCampaign["status"] =
+          input.mode === "draft"
+            ? "Draft"
+            : input.scheduledFor === "Send Now"
+              ? "Sent"
+              : "Scheduled";
+        const parsedSchedule = Date.parse(input.scheduledFor);
+        const sentAt = status === "Sent" ? new Date() : null;
+        const { data: savedCampaign, error } = await supabase
+          .from("notification_campaigns")
+          .insert({
+            title: input.title,
+            message: input.message,
+            audience: input.audience,
+            status,
+            scheduled_for_text: input.scheduledFor,
+            scheduled_at:
+              status === "Scheduled" && Number.isFinite(parsedSchedule)
+                ? new Date(parsedSchedule).toISOString()
+                : null,
+            sent_at: sentAt?.toISOString() ?? null,
+            target_type: input.targetType,
+            target_value: input.targetValue,
+            created_by: user.id,
+          })
+          .select("*")
+          .single();
+        if (error) throw error;
+
         const campaign: NotificationCampaign = {
-          id: `camp-${Date.now()}`,
-          title: input.title,
-          message: input.message,
-          audience: input.audience,
-          status:
-            input.mode === "draft"
-              ? "Draft"
-              : input.scheduledFor === "Send Now"
-                ? "Sent"
-                : "Scheduled",
-          scheduledFor: input.scheduledFor,
-          sentAt:
-            input.scheduledFor === "Send Now"
-              ? new Date().toLocaleString()
-              : "",
-          targetType: input.targetType,
-          targetValue: input.targetValue,
+          id: savedCampaign.id,
+          title: savedCampaign.title,
+          message: savedCampaign.message,
+          audience: savedCampaign.audience,
+          status: savedCampaign.status,
+          scheduledFor: savedCampaign.scheduled_for_text,
+          sentAt: savedCampaign.sent_at
+            ? new Date(savedCampaign.sent_at).toLocaleString()
+            : "",
+          targetType: savedCampaign.target_type,
+          targetValue: savedCampaign.target_value ?? "",
         };
 
-        // Simulating delivery to the user's inbox
+        // Immediate campaigns still show a local preview on the admin device.
         if (campaign.status === "Sent") {
           const newNotification =
             buildCustomerNotificationFromCampaign(campaign);

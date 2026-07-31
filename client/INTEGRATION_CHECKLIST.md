@@ -1,6 +1,6 @@
 # House of Shirts Integration Checklist
 
-Last audited: 2026-07-31
+Last audited: 2026-08-01
 
 This reflects what exists in the repository, not a guarantee that every external service is configured in the deployed environment. `[x]` means implemented in code; `[ ]` means incomplete, simulated, configuration-dependent, or still needing production verification.
 
@@ -56,7 +56,7 @@ This reflects what exists in the repository, not a guarantee that every external
 - [ ] Replace simulated `gigl-tracking` data with the real GIGL API; add real DHL/Rider tracking as needed.
 - [ ] Verify shipping quotes/estimates and the Shopify API version against production.
 - [ ] Make order creation/webhook reconciliation idempotent and cover cancellations, refunds, partial fulfilment, and exchanges.
-- [ ] Add immutable audit logging for privileged order changes.
+- [x] Added immutable, administrator-only audit logging for privileged order changes.
 
 ## Returns and support
 
@@ -96,7 +96,7 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Supabase Storage bucket and RLS policies for managed content/assets.
 - [x] Added owner/admin staff-access grants with pending-email activation and protected grant/revoke controls.
 - [ ] Add granular per-feature staff permissions if full admin access is too broad.
-- [ ] Add immutable audit history for content, customers, orders, and campaigns.
+- [x] Added an append-only audit history and admin viewer for content, customers, orders, campaigns, templates, media, and staff access.
 - [ ] Validate media compression, dimensions, type/size limits, orphan cleanup, and export retention/security.
 
 ## Supabase and operations
