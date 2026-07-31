@@ -4,9 +4,9 @@ import { StyleSheet } from "react-native";
 export const colors = {
   background: "#ffffff",
   text: "#0f172a",
-  textSecondary: "#64748b", // slate-500
+  textSecondary: "#002", // slate-500
   border: "#e2e8f0", // slate-200
-  accent: "#314158",
+  accent: "#002",
 };
 
 // Format price with Nigerian Naira symbol and commas
