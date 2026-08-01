@@ -1,5 +1,6 @@
 import { useThemeStore } from "@/stores/themeStore";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { isVisibleTabRoute } from "@/lib/tab-bar";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Pressable, StyleSheet, View, Animated, Platform } from "react-native";
 import React, { useEffect, useRef } from "react";
@@ -12,7 +13,7 @@ export function AdminBottomTabBar({ state, descriptors, navigation }: BottomTabB
       <View
         style={[styles.tabBar, isDark ? styles.tabBarDark : styles.tabBarLight]}
       >
-        {state.routes.filter(route => descriptors[route.key].options.tabBarIcon !== undefined).map((route, index) => {
+        {state.routes.filter(route => isVisibleTabRoute(descriptors[route.key].options)).map((route) => {
           const { options } = descriptors[route.key];
           
           // Note: state.index refers to the index in the FULL routes array.
@@ -116,8 +117,10 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
+  // Sized to its icon rather than an equal share, so the bar's space-between
+  // actually distributes: a flex:1 slot claims its share even when it has
+  // nothing visible in it, which reads as a hole at the end of the pill.
   tab: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -4,41 +4,30 @@ import { colors } from "@/constants/index";
 import { useEffect, useRef } from "react";
 import { useThemeStore } from "@/stores/themeStore";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { isVisibleTabRoute } from "@/lib/tab-bar";
 
 export function CustomTabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
-  const {  isDark  } = useThemeStore();
+  const { isDark } = useThemeStore();
 
-  // Expo Router registers every file in app/(tabs) as a route, and the default
-  // tab bar hides any route marked `href: null`. This custom bar replaces that
-  // default, so without the same filtering a route with no icon still claims a
-  // flex slot and leaves a blank gap at the end of the pill.
-  const visibleRoutes = state.routes.filter((route) => {
-    const { options } = descriptors[route.key];
-    return (
-      options.tabBarIcon != null &&
-      (options as { href?: string | null }).href !== null
-    );
-  });
+  const visibleRoutes = state.routes.filter((route) =>
+    isVisibleTabRoute(descriptors[route.key].options),
+  );
 
   return (
     <View style={styles.container}>
       {/* White tab bar background */}
       <View
-        style={[
-          styles.tabBar,
-          isDark ? styles.tabBarDark : styles.tabBarLight,
-        ]}
+        style={[styles.tabBar, isDark ? styles.tabBarDark : styles.tabBarLight]}
       >
         {visibleRoutes.map((route) => {
           const { options } = descriptors[route.key];
           // Focus compares against the navigator's own index, so it must use
           // the route's position in state.routes, not in the filtered list.
-          const isFocused =
-            state.routes[state.index]?.key === route.key;
+          const isFocused = state.routes[state.index]?.key === route.key;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -84,23 +73,34 @@ function TabButton({ route, isFocused, onPress, options, isDark }: any) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.tab, pressed ? styles.pressed : undefined]}
+      style={({ pressed }) => [
+        styles.tab,
+        pressed ? styles.pressed : undefined,
+      ]}
       accessibilityRole="tab"
-      accessibilityLabel={options.tabBarAccessibilityLabel ?? options.title ?? route.name}
+      accessibilityLabel={
+        options.tabBarAccessibilityLabel ?? options.title ?? route.name
+      }
       accessibilityState={{ selected: isFocused }}
     >
       <Animated.View
         style={[
           styles.iconContainer,
           isFocused && styles.activeIcon,
-          isFocused && Platform.OS === "android" ? styles.activeIconAndroid : undefined,
+          isFocused && Platform.OS === "android"
+            ? styles.activeIconAndroid
+            : undefined,
           !isFocused && isDark ? styles.inactiveDarkIcon : undefined,
           { transform: [{ translateY }] },
         ]}
       >
         {options.tabBarIcon?.({
           focused: isFocused,
-          color: isFocused ? "#ffffff" : isDark ? "#a1a1aa" : colors.textSecondary,
+          color: isFocused
+            ? "#ffffff"
+            : isDark
+              ? "#a1a1aa"
+              : colors.textSecondary,
           size: 24,
         })}
       </Animated.View>
@@ -112,14 +112,21 @@ const styles = StyleSheet.create({
   container: {
     position: "absolute",
     bottom: 20,
-    left: 20,
+    left: 25,
     right: 20,
   },
   tabBar: {
     flexDirection: "row",
+    // Anchors the first icon to the left padding edge and the last to the right
+    // one, then splits what is left over into equal gaps. The icons cannot
+    // bunch up at one end and leave dead space at the other, however many tabs
+    // the navigator ends up handing us.
+    justifyContent: "space-between",
+    alignItems: "center",
     borderRadius: 30,
     height: 65,
-    paddingHorizontal: 10,
+    paddingHorizontal: 30,
+    // marginInline: 10,
     elevation: Platform.OS === "android" ? 0 : 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -137,11 +144,18 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
+  // Deliberately not `flex: 1`. An equal-share slot is only equal-looking while
+  // every slot holds something: anything the row renders without visible
+  // content still claims its full share and shows up as a hole. Sized to its
+  // icon instead, the row lays out from what is actually on screen.
   tab: {
-    flex: 1,
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
+  // Widen the gap between icons by lowering the pill's paddingHorizontal (more
+  // room to share out) or by shrinking this. The gap works out as
+  // (pill width - 2 x padding - 5 x this width) / 4.
   iconContainer: {
     width: 50,
     height: 50,
