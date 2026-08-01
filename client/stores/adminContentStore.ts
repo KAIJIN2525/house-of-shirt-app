@@ -354,6 +354,20 @@ export const normalizeShopifySyncLogs = (
   logs?: ShopifySyncLog[] | null,
 ): ShopifySyncLog[] => (Array.isArray(logs) ? logs : []);
 
+// These columns are plain text in Postgres, so values coming back from the
+// database are only `string`. Narrow them to the app's unions on the way in and
+// fall back to the safest option rather than trusting the cast.
+const toCampaignAudience = (
+  value: string | null,
+): NotificationCampaign["audience"] =>
+  value === "vip" || value === "new" ? value : "all";
+
+const toCampaignStatus = (value: string | null): NotificationCampaign["status"] =>
+  value === "Sent" || value === "Scheduled" ? value : "Draft";
+
+const toCampaignTargetType = (value: string | null): NotificationTargetType =>
+  value === "orders" || value === "product" ? value : "shop";
+
 const buildCustomerNotificationFromCampaign = (
   campaign: NotificationCampaign,
   previous?: CustomerNotification,
@@ -527,7 +541,7 @@ const useAdminContentStoreBase = create<AdminContentState>()(
               ? `LATEST SYNC ${String(latestLog.status).toUpperCase()}`
               : "SHOPIFY SYNC IS STALE";
             const warningMessage = latestFailed
-              ? latestLog.error_message || latestLog.summary || "The latest Shopify sync needs attention."
+              ? latestLog.summary || "The latest Shopify sync needs attention."
               : lastSuccessAt
                 ? `The last successful sync was ${lastSuccessAt.toLocaleString()}.`
                 : "No successful Shopify synchronization has been recorded.";
@@ -722,13 +736,13 @@ const useAdminContentStoreBase = create<AdminContentState>()(
           id: savedCampaign.id,
           title: savedCampaign.title,
           message: savedCampaign.message,
-          audience: savedCampaign.audience,
-          status: savedCampaign.status,
+          audience: toCampaignAudience(savedCampaign.audience),
+          status: toCampaignStatus(savedCampaign.status),
           scheduledFor: savedCampaign.scheduled_for_text,
           sentAt: savedCampaign.sent_at
             ? new Date(savedCampaign.sent_at).toLocaleString()
             : "",
-          targetType: savedCampaign.target_type,
+          targetType: toCampaignTargetType(savedCampaign.target_type),
           targetValue: savedCampaign.target_value ?? "",
         };
 

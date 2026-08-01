@@ -1,4 +1,5 @@
 import { OrderPaymentMethod, OrderRecord } from "@/constants/orders";
+import { toJson } from "@/lib/json";
 import type { ShippingAddress } from "./addressStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
@@ -726,7 +727,7 @@ export const useOrdersStoreBase = create<OrdersState>()(
               .insert({
                 id: orderId,
                 user_id: user.id,
-                email: user.email, // Added email for robust RLS and linking
+                email: user.email ?? null, // Added email for robust RLS and linking
                 order_number: orderId,
                 customer_name: input.customerName,
                 status: "Processing",
@@ -735,8 +736,8 @@ export const useOrdersStoreBase = create<OrdersState>()(
                 carrier: order.carrier,
                 tracking_number: order.trackingNumber,
                 logistics_milestone: "Processing",
-                timeline: order.timeline,
-                metadata: {
+                timeline: toJson(order.timeline),
+                metadata: toJson({
                   phone: input.customerPhone,
                   items: input.lineItems,
                   region: order.deliveryRegion,
@@ -750,7 +751,7 @@ export const useOrdersStoreBase = create<OrdersState>()(
                   discount: input.discount ?? 0,
                   shipping_title: input.shippingTitle,
                   shipping_address: input.shippingAddress,
-                },
+                }),
               });
 
             if (insertError) {
@@ -788,7 +789,7 @@ export const useOrdersStoreBase = create<OrdersState>()(
               await supabase
                 .from("orders")
                 .update({
-                  metadata: {
+                  metadata: toJson({
                     phone: input.customerPhone,
                     items: input.lineItems,
                     region: order.deliveryRegion,
@@ -802,7 +803,7 @@ export const useOrdersStoreBase = create<OrdersState>()(
                     discount: input.discount ?? 0,
                     shipping_title: input.shippingTitle,
                     shipping_address: input.shippingAddress,
-                  },
+                  }),
                 })
                 .eq("id", orderId);
             }
@@ -852,7 +853,7 @@ export const useOrdersStoreBase = create<OrdersState>()(
                 if (result.shopifyOrderId) {
                   await supabase.from("orders").update({
                     shopify_order_id: String(result.shopifyOrderId),
-                    metadata: {
+                    metadata: toJson({
                       phone: input.customerPhone,
                       items: input.lineItems,
                       region: order.deliveryRegion,
@@ -869,7 +870,7 @@ export const useOrdersStoreBase = create<OrdersState>()(
                       shopify_order_id: result.shopifyOrderId,
                       shopify_order_name: result.shopifyOrderName,
                       shopify_order_number: result.shopifyOrderNumber,
-                    },
+                    }),
                   }).eq("id", orderId);
                 }
               }
@@ -1213,8 +1214,8 @@ export const useOrdersStoreBase = create<OrdersState>()(
                 .update({
                   status: update.status,
                   logistics_milestone: update.logisticsMilestone,
-                  timeline: update.timeline,
-                  metadata: update.metadata,
+                  timeline: toJson(update.timeline),
+                  metadata: toJson(update.metadata),
                 })
                 .eq("id", update.id),
             ),
@@ -1406,8 +1407,8 @@ export const useOrdersStoreBase = create<OrdersState>()(
             .update({
               status: nextOrder.status,
               logistics_milestone: nextOrder.logisticsMilestone,
-              timeline: nextOrder.timeline,
-              metadata: buildOrderMetadata(nextOrder),
+              timeline: toJson(nextOrder.timeline),
+              metadata: toJson(buildOrderMetadata(nextOrder)),
             })
             .eq("id", orderId);
 

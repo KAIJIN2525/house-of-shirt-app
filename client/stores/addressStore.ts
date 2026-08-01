@@ -125,7 +125,11 @@ export const useAddressStore = create<AddressState>()(
           const { supabase } = await import("@/lib/supabase");
           if (updatedData.isDefault) {
             const { data: { user } } = await supabase.auth.getUser();
-            await supabase.from("addresses").update({ is_default: false }).eq("user_id", user?.id);
+            // Without a session the filter would match nothing, silently leaving
+            // the previous default in place alongside the new one.
+            if (user) {
+              await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
+            }
           }
 
           await supabase.from("addresses").update({
@@ -165,7 +169,10 @@ export const useAddressStore = create<AddressState>()(
         try {
           const { supabase } = await import("@/lib/supabase");
           const { data: { user } } = await supabase.auth.getUser();
-          await supabase.from("addresses").update({ is_default: false }).eq("user_id", user?.id);
+          if (!user) {
+            return;
+          }
+          await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
           await supabase.from("addresses").update({ is_default: true }).eq("id", id);
         } catch (err) {
           console.error("Error setting default address:", err);

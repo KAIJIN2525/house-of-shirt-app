@@ -5,6 +5,7 @@ import type {
   WelcomeContent,
 } from "@/stores/adminContentStore";
 import { supabase } from "@/lib/supabase";
+import { toJson } from "@/lib/json";
 
 export interface ManagedMediaAsset {
   id: string;
@@ -239,7 +240,7 @@ export const saveManagedDocument = async (
     .maybeSingle();
   const { error } = await supabase.from("managed_app_content").upsert({
     content_key: key,
-    content,
+    content: toJson(content),
     version: Number(existing?.version ?? 0) + 1,
     updated_by: user?.id ?? null,
   });
