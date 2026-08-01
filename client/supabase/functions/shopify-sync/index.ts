@@ -1,6 +1,7 @@
 import { createClient } from "supabase";
 import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 import { fetchAllShopifyRestResources } from "../_shared/shopify-rest.mjs";
+import { getShopifyAdminToken } from "../_shared/shopify-auth.ts";
 import { getLogisticsMilestone, getOrderStatus } from "../_shared/order-state.ts";
 
 const corsHeaders = {
@@ -860,7 +861,11 @@ Deno.serve(async (req) => {
     if (authorizationError) return authorizationError;
 
     const storeDomain = getEnv("SHOPIFY_STORE_DOMAIN");
-    const accessToken = getEnv("SHOPIFY_ACCESS_TOKEN");
+    // Matches admin-orders and create-shopify-order, which mint a token from
+    // the app's client credentials. This function used to read the static
+    // SHOPIFY_ACCESS_TOKEN alone, so a stale token failed every stage with 401
+    // while the rest of the Shopify integration carried on working.
+    const accessToken = await getShopifyAdminToken(storeDomain);
     const limiterClient = createClient(supabaseUrl, serviceRoleKey);
     const rateLimit = await consumeRateLimit(limiterClient, {
       scope: "shopify-sync",
