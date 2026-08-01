@@ -1,3 +1,5 @@
+import { createClient } from "supabase";
+import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -151,6 +153,17 @@ Deno.serve(async (req) => {
     const token = await getShopifyAccessToken(shopDomain);
 
     const body: CreateShopifyOrderPayload = await req.json();
+    const limiterClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const rateLimit = await consumeRateLimit(limiterClient, {
+      scope: "create-shopify-order",
+      identifier: req.headers.get("Authorization") ?? body.appOrderId ?? "anonymous",
+      limit: 10,
+      windowSeconds: 60,
+    });
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit, corsHeaders);
     const {
       appOrderId,
       customerName,

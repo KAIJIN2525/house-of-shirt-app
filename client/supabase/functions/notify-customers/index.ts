@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -537,10 +538,12 @@ Deno.serve(async (req) => {
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     let isAuthorized = false;
+    let rateIdentifier = "unknown";
 
     const testBypassSecret = Deno.env.get("TEST_BYPASS_TOKEN")?.trim();
     if (testBypass && testBypassSecret && testBypass === testBypassSecret) {
       isAuthorized = true;
+      rateIdentifier = "test-bypass";
     } else {
       if (!authHeader) {
         return jsonResponse({ error: "Missing Authorization header" }, 401);
@@ -548,6 +551,7 @@ Deno.serve(async (req) => {
       const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
       if (accessToken === supabaseServiceKey) {
         isAuthorized = true;
+        rateIdentifier = "service-role";
       } else {
         const supabase = createClient(supabaseUrl, supabaseAnonKey, {
           global: { headers: { Authorization: authHeader } },
@@ -566,6 +570,7 @@ Deno.serve(async (req) => {
 
           if (profile?.is_admin) {
             isAuthorized = true;
+            rateIdentifier = user.id;
           }
         }
       }
@@ -575,8 +580,22 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Unauthorized - Admins only" }, 403);
     }
 
+    const rateLimit = await consumeRateLimit(supabaseAdmin, {
+      scope: "notify-customers",
+      identifier: rateIdentifier,
+      limit: 5,
+      windowSeconds: 60,
+    });
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit, corsHeaders);
+
     const body: NotifyRequest = await req.json();
     const { customers, messageType, customMessage } = body;
+    if (!Array.isArray(customers) || customers.length === 0) {
+      return jsonResponse({ error: "At least one customer is required" }, 400);
+    }
+    if (customers.length > 100) {
+      return jsonResponse({ error: "A maximum of 100 customers can be notified per request" }, 413);
+    }
     let successCount = 0;
     const reports: DispatchReport[] = [];
 
@@ -598,6 +617,23 @@ Deno.serve(async (req) => {
         customer.customMessage ?? customMessage,
       );
       const contact = await resolveCustomerContact(supabaseAdmin, customer, orderData);
+      const recipientIdentifier = contact.userId ?? contact.email ?? contact.phone ?? customer.orderId ?? customer.name;
+      const recipientLimit = await consumeRateLimit(supabaseAdmin, {
+        scope: `notify-recipient:${messageType}`,
+        identifier: recipientIdentifier,
+        limit: 20,
+        windowSeconds: 3600,
+      });
+      if (!recipientLimit.allowed) {
+        reports.push({
+          orderId: customer.orderId,
+          requestId: customer.requestId,
+          customerName: customer.name,
+          channels: { email: "skipped", sms: "skipped", push: "skipped", app: "skipped", admin: "skipped" },
+          errors: { delivery: `Rate limited. Retry after ${recipientLimit.retryAfterSeconds} seconds.` },
+        });
+        continue;
+      }
       const emailHtml = buildEmailHtml(
         customer.name,
         customer.orderId ?? "N/A",

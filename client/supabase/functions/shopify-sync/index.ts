@@ -1,4 +1,5 @@
 import { createClient } from "supabase";
+import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 import { fetchAllShopifyRestResources } from "../_shared/shopify-rest.mjs";
 
 const corsHeaders = {
@@ -862,6 +863,14 @@ Deno.serve(async (req) => {
 
     const storeDomain = getEnv("SHOPIFY_STORE_DOMAIN");
     const accessToken = getEnv("SHOPIFY_ACCESS_TOKEN");
+    const limiterClient = createClient(supabaseUrl, serviceRoleKey);
+    const rateLimit = await consumeRateLimit(limiterClient, {
+      scope: "shopify-sync",
+      identifier: storeDomain || "default-store",
+      limit: 4,
+      windowSeconds: 3600,
+    });
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit, corsHeaders);
 
     const syncStartedAt = new Date().toISOString();
     console.log(`Starting Full Shopify sync for ${storeDomain}`);

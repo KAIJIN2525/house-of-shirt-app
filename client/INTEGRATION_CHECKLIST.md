@@ -80,7 +80,8 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Admin campaign/template/targeting UI and Edge Function channels for email, SMS, push, in-app, and admin alerts.
 - [x] Resend and Twilio configuration hooks.
 - [ ] Configure APNs/FCM/Expo credentials, Resend domain/sender, and Twilio sender; test physical devices.
-- [ ] Add communication preferences, consent/unsubscribe, delivery receipts, retries, and rate limiting.
+- [x] Deployed database-backed cross-instance Edge Function limits for sensitive account/admin/order/sync operations plus notification batch and per-recipient limits.
+- [ ] Add communication preferences, consent/unsubscribe, delivery receipts, and provider retries.
 - [x] Cancel local abandoned-bag reminders by their stored notification identifier.
 - [ ] Verify scheduled campaigns execute server-side while the app is closed.
 

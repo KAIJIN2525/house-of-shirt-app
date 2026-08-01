@@ -1,4 +1,5 @@
 import { createClient } from "supabase";
+import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -405,6 +406,14 @@ Deno.serve(async (req) => {
 
     if (profileError) throwStageError("Load admin profile", profileError);
     if (!profile?.is_admin) return jsonResponse({ error: "Admin access required" }, 403);
+
+    const rateLimit = await consumeRateLimit(supabase, {
+      scope: "admin-orders",
+      identifier: authData.user.id,
+      limit: 60,
+      windowSeconds: 60,
+    });
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit, corsHeaders);
 
     let syncedLatestOrders = 0;
     let syncWarning: string | null = null;

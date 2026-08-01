@@ -1,4 +1,5 @@
 import { createClient } from "supabase";
+import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +41,15 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const actionLimit = action === "delete" ? 3 : action === "export" ? 5 : 20;
+    const actionWindow = action === "delete" || action === "export" ? 3600 : 60;
+    const rateLimit = await consumeRateLimit(admin, {
+      scope: `account-self-service:${action || "unknown"}`,
+      identifier: user.id,
+      limit: actionLimit,
+      windowSeconds: actionWindow,
+    });
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit, corsHeaders);
 
     if (action === "export") {
       const [profile, addresses, favorites, cart, orders, returns, restock, notifications, threads] =

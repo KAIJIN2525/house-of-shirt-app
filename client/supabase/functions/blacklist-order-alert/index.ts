@@ -1,4 +1,5 @@
 import { createClient } from "supabase";
+import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +66,13 @@ Deno.serve(async (req) => {
     const orderTotal = formatMoney(body.orderTotal);
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const rateLimit = await consumeRateLimit(supabase, {
+      scope: "blacklist-order-alert",
+      identifier: authData.user.id,
+      limit: 10,
+      windowSeconds: 60,
+    });
+    if (!rateLimit.allowed) return rateLimitResponse(rateLimit, corsHeaders);
     const { data: candidates, error: blacklistError } = await supabase
       .from("shopify_customers")
       .select("email, first_name, last_name, phone, blacklist_reason")
