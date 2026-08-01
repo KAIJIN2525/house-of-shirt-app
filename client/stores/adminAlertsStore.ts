@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { Tables } from "@/lib/db";
 import { create } from "zustand";
 
 export interface AdminAlertRecord {
@@ -21,7 +22,21 @@ interface AdminAlertsState {
   markAllRead: () => Promise<void>;
 }
 
-const mapAlert = (row: any): AdminAlertRecord => ({
+// Only the columns the alerts query selects, not the whole row.
+type AlertRow = Pick<
+  Tables<"app_notifications">,
+  | "id"
+  | "title"
+  | "message"
+  | "label"
+  | "icon"
+  | "target_type"
+  | "target_value"
+  | "read"
+  | "created_at"
+>;
+
+const mapAlert = (row: AlertRow): AdminAlertRecord => ({
   id: String(row.id),
   title: row.title ?? "Admin alert",
   message: row.message ?? "",

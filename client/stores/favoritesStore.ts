@@ -34,7 +34,7 @@ export const useFavoritesStore = create<FavoritesState>()(
 
           if (error) throw error;
           if (data) {
-            set({ favorites: data.map((f: any) => f.product_id) });
+            set({ favorites: data.map((f) => f.product_id) });
           }
         } catch (err) {
           console.error("Error fetching favorites:", err);

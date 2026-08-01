@@ -1,3 +1,4 @@
+import type { Tables } from "@/lib/db";
 import { create } from "zustand";
 
 export type SupportTicketPriority = "URGENT" | "HIGH" | "STANDARD";
@@ -52,7 +53,15 @@ interface AdminSupportState {
   sendMessage: (ticketId: string, message: string) => Promise<void>;
 }
 
-const mapDatabaseTicket = (row: any): SupportTicket => ({
+// support_tickets stores priority/status as text, so values arriving from the
+// database must be narrowed rather than trusted.
+const toTicketPriority = (value: string | null): SupportTicketPriority =>
+  value === "URGENT" || value === "HIGH" ? value : "STANDARD";
+
+const toTicketStatus = (value: string | null): SupportTicketStatus =>
+  value === "OPEN" || value === "PENDING" ? value : "RESOLVED";
+
+const mapDatabaseTicket = (row: Tables<"support_tickets">): SupportTicket => ({
   id: row.id,
   ticketNumber: row.ticket_number,
   title: row.title,
@@ -61,16 +70,21 @@ const mapDatabaseTicket = (row: any): SupportTicket => ({
   customerEmail: row.customer_email ?? undefined,
   orderId: row.order_id ?? undefined,
   agentName: row.agent_name ?? undefined,
-  priority: row.priority,
-  status: row.status,
+  priority: toTicketPriority(row.priority),
+  status: toTicketStatus(row.status),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
 
-const mapDatabaseMessage = (row: any): SupportTicketMessage => ({
+const toMessageSender = (value: string | null): SupportTicketMessage["sender"] =>
+  value === "admin" ? "admin" : "customer";
+
+const mapDatabaseMessage = (
+  row: Tables<"support_ticket_messages">,
+): SupportTicketMessage => ({
   id: row.id,
   ticketId: row.ticket_id,
-  sender: row.sender,
+  sender: toMessageSender(row.sender),
   senderName: row.sender_name,
   message: row.message,
   createdAt: row.created_at,

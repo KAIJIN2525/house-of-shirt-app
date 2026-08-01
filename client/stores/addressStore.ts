@@ -50,7 +50,7 @@ export const useAddressStore = create<AddressState>()(
           if (error) throw error;
           if (data) {
             set({
-              addresses: data.map((a: any) => ({
+              addresses: data.map((a) => ({
                 id: a.id,
                 fullName: a.full_name,
                 phoneNumber: a.phone,
@@ -58,9 +58,11 @@ export const useAddressStore = create<AddressState>()(
                 apartment: a.address_line2 || "",
                 city: a.city,
                 state: a.state,
-                zipCode: "", 
-                country: a.country,
-                isDefault: a.is_default,
+                zipCode: "",
+                // These columns are nullable; the app models absence as
+                // undefined/false rather than null.
+                country: a.country ?? undefined,
+                isDefault: a.is_default ?? false,
               })),
 
             });

@@ -43,7 +43,7 @@ export const useBagStore = create<BagState>((set, get) => ({
       if (error) throw error;
       if (data) {
         set({
-          bagItems: data.map((item: any) => ({
+          bagItems: data.map((item) => ({
             id: item.id,
             productId: item.product_id,
             variantId: item.variant_id ? String(item.variant_id) : undefined,
@@ -51,8 +51,8 @@ export const useBagStore = create<BagState>((set, get) => ({
             image: item.image,
             price: Number(item.price),
             quantity: item.quantity,
-            size: item.size,
-            color: item.color,
+            size: item.size ?? undefined,
+            color: item.color ?? undefined,
           })),
         });
       }
