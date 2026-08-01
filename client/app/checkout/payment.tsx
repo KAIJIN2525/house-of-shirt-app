@@ -1,4 +1,5 @@
 import { formatPrice } from "@/constants";
+import { getDeliveryPromise } from "@/lib/delivery";
 import { supabase } from "@/lib/supabase";
 import { useAddressStore } from "@/stores/addressStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -113,6 +114,22 @@ const CheckoutPaymentScreen = () => {
     return value?.trim() || "Delivery timeframe confirmed at checkout";
   }, [params.shippingDuration]);
   const shippingCost = selectedDelivery?.amount ?? quotedShippingCost;
+  // Lagos runs on the house same-day/next-day cut-off; anywhere else the only
+  // honest figure is whatever Shopify quoted for this address.
+  const deliveryPromise = useMemo(
+    () =>
+      getDeliveryPromise({
+        city: defaultAddress?.city,
+        state: defaultAddress?.state,
+        quotedDuration: selectedDelivery?.description ?? quotedShippingDuration,
+      }),
+    [
+      defaultAddress?.city,
+      defaultAddress?.state,
+      quotedShippingDuration,
+      selectedDelivery?.description,
+    ],
+  );
   const subtotal = getTotalPrice();
   const total = subtotal + shippingCost - discount;
 
@@ -343,7 +360,7 @@ const CheckoutPaymentScreen = () => {
             <View className="mt-3 flex-row items-center gap-2">
               <Ionicons name="location-outline" size={14} color={isDark ? "#a3a3a3" : "#6b7280"} />
               <Text className="font-normal text-[11px] text-neutral-400 dark:text-white">
-                Express delivery in 2-4 business days
+                {deliveryPromise}
               </Text>
             </View>
           </View>
@@ -359,8 +376,11 @@ const CheckoutPaymentScreen = () => {
                 <Text className="font-bold text-[13px] text-black dark:text-white">
                   {quotedShippingTitle}
                 </Text>
+                {/* Shopify's own rate description is used everywhere except
+                    Lagos, where the house cut-off overrides it -- otherwise
+                    this card contradicts the promise on the address above. */}
                 <Text className="mt-2 text-[11px] leading-5 text-neutral-400">
-                  {quotedShippingDuration}
+                  {deliveryPromise}
                 </Text>
               </View>
               <Text className="font-bold text-[13px] text-black dark:text-white">
