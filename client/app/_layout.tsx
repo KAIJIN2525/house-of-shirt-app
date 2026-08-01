@@ -51,12 +51,43 @@ import {
   Cormorant_700Bold,
 } from "@expo-google-fonts/cormorant";
 import { ShopifyCheckoutSheetProvider } from "@shopify/checkout-sheet-kit";
+import { isRunningInExpoGo } from "expo";
+import * as Sentry from "@sentry/react-native";
 
-export default function RootLayout() {
+// The DSN is not a secret -- it ships inside the app bundle either way -- so it
+// is inlined as the fallback. That keeps EAS builds reporting even though
+// .easignore excludes .env from the build upload. Override per environment with
+// EXPO_PUBLIC_SENTRY_DSN when pointing a build at a different project.
+Sentry.init({
+  dsn:
+    process.env.EXPO_PUBLIC_SENTRY_DSN ??
+    "https://c2c0194abda53136b1e5a6c745e803b7@o4511825090248704.ingest.de.sentry.io/4511833284870224",
+
+  environment: __DEV__ ? "development" : "production",
+
+  // Full sampling while proving the wiring out. Drop to ~0.1-0.2 once real
+  // traffic arrives, or tracing quota disappears fast on a busy storefront.
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+
+  // Slow/frozen frame tracking needs the native module, which Expo Go lacks.
+  enableNativeFramesTracking: !isRunningInExpoGo(),
+
+  // Ties mobile traces to the Supabase Edge Functions they call, so a failed
+  // checkout or order sync shows up as one trace rather than two halves.
+  tracePropagationTargets: [/^https:\/\/[a-z0-9-]+\.supabase\.co/],
+
+  debug: false,
+});
+
+function RootLayout() {
   return (
     <RootLayoutContent />
   );
 }
+
+// Wrapping the root captures render-phase errors and enables the touch/navigation
+// instrumentation the tracing integration relies on.
+export default Sentry.wrap(RootLayout);
 
 function GlobalStoreInitializer() {
   const router = useRouter();
