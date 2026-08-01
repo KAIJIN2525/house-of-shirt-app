@@ -1,8 +1,9 @@
-import { View, Pressable, StyleSheet, Platform } from "react-native";
+import { View, Pressable, StyleSheet, Animated, Platform } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { colors } from "@/constants/index";
+import { useEffect, useRef } from "react";
 import { useThemeStore } from "@/stores/themeStore";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export function CustomTabBar({
   state,
@@ -10,10 +11,9 @@ export function CustomTabBar({
   navigation,
 }: BottomTabBarProps) {
   const {  isDark  } = useThemeStore();
-  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { bottom: Platform.OS === "android" ? 8 : Math.max(8, insets.bottom) }]}>
+    <View style={styles.container}>
       {/* White tab bar background */}
       <View
         style={[
@@ -54,6 +54,18 @@ export function CustomTabBar({
 }
 
 function TabButton({ route, isFocused, onPress, options, isDark }: any) {
+  const translateY = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    Animated.spring(translateY, {
+      toValue: isFocused && !reduceMotion ? -8 : 0,
+      useNativeDriver: true,
+      damping: 15,
+      stiffness: 150,
+    }).start();
+  }, [isFocused, reduceMotion, translateY]);
+
   return (
     <Pressable
       onPress={onPress}
@@ -62,12 +74,13 @@ function TabButton({ route, isFocused, onPress, options, isDark }: any) {
       accessibilityLabel={options.tabBarAccessibilityLabel ?? options.title ?? route.name}
       accessibilityState={{ selected: isFocused }}
     >
-      <View
+      <Animated.View
         style={[
           styles.iconContainer,
           isFocused && styles.activeIcon,
           isFocused && Platform.OS === "android" ? styles.activeIconAndroid : undefined,
           !isFocused && isDark ? styles.inactiveDarkIcon : undefined,
+          { transform: [{ translateY }] },
         ]}
       >
         {options.tabBarIcon?.({
@@ -75,7 +88,7 @@ function TabButton({ route, isFocused, onPress, options, isDark }: any) {
           color: isFocused ? "#ffffff" : isDark ? "#a1a1aa" : colors.textSecondary,
           size: 24,
         })}
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -83,6 +96,7 @@ function TabButton({ route, isFocused, onPress, options, isDark }: any) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
+    bottom: 20,
     left: 20,
     right: 20,
   },
