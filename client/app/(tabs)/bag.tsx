@@ -134,7 +134,8 @@ const Bag = () => {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-[#050505]">
       <View className="flex-row items-center justify-between px-6 pb-6 pt-4">
-        <Ionicons name="menu" size={24} color={isDark ? "#ffffff" : "#000000"} />
+        {/* Balances the search icon so the logo stays centred. */}
+        <View className="w-6" />
         <BrandLogo width={154} height={28} />
         <Pressable onPress={() => router.push("/search" as any)} accessibilityRole="button" accessibilityLabel="Search products">
           <Ionicons name="search" size={24} color={isDark ? "#ffffff" : "#000000"} />
