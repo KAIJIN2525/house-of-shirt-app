@@ -59,7 +59,7 @@ function TabButton({ route, isFocused, onPress, options, isDark }: any) {
 
   useEffect(() => {
     Animated.spring(translateY, {
-      toValue: isFocused && !reduceMotion ? -35 : 0,
+      toValue: isFocused && !reduceMotion ? -8 : 0,
       useNativeDriver: true,
       damping: 15,
       stiffness: 150,

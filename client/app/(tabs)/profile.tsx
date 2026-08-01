@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { InteractionManager, Pressable, ScrollView, View } from "react-native";
+import { Image, InteractionManager, Pressable, ScrollView, View } from "react-native";
 import { AppText as Text } from "@/components/AppText";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -45,7 +45,7 @@ const textTransformOptions: { id: TextTransformMode; label: string }[] = [
 const Profile = () => {
   // Navigation
   const router = useRouter();
-  const { user, signOut } = useAuthStore();
+  const { user, profile, isAuthenticated, isProfileLoading, fetchProfile, signOut } = useAuthStore();
   const { isAdmin } = useAdminAccess();
   const { myOrders: orders, fetchMyOrders } = useOrdersStore();
   const { unreadCount: returnsUnreadCount } = useReturnsStore();
@@ -61,11 +61,14 @@ const Profile = () => {
   useFocusEffect(
     React.useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
-        void fetchMyOrders();
+        if (isAuthenticated) {
+          void fetchProfile();
+          void fetchMyOrders();
+        }
       });
 
       return () => task.cancel();
-    }, [fetchMyOrders]),
+    }, [fetchMyOrders, fetchProfile, isAuthenticated]),
   );
 
   const handleOrdersPress = () => {
@@ -106,25 +109,38 @@ const Profile = () => {
 
         <View className="mb-8 px-6">
           <View className="gap-4 pt-6">
-            <View className="h-24 w-24 items-center justify-center bg-gray-700 dark:bg-[#17191d]">
-              <Ionicons name="person" size={32} color="#fff" />
+            <View className="h-24 w-24 items-center justify-center overflow-hidden bg-gray-700 dark:bg-[#17191d]">
+              {profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} className="h-full w-full" resizeMode="cover" accessibilityLabel="Profile photo" />
+              ) : (
+                <Ionicons name="person" size={32} color="#fff" />
+              )}
             </View>
 
-            <View className="flex-1 justify-center">
+            <View className="min-h-28 flex-1 justify-center">
               <Text className="font-medium text-xs text-slate-600 dark:text-white uppercase">
-                MEMBER SINCE{" "}
-                {user?.created_at
-                  ? new Date(user.created_at).getFullYear()
-                  : "2024"}
+                {isAuthenticated ? "MEMBER SINCE " : "WELCOME"}
+                {isAuthenticated
+                  ? new Date(profile?.created_at ?? user?.created_at ?? Date.now()).getFullYear()
+                  : null}
               </Text>
-              <Text className="mb-1 font-bold text-5xl text-black dark:text-white">
-                {user?.user_metadata?.full_name ||
-                  user?.email?.split("@")[0] ||
-                  "Atelier Guest"}
+              <Text className="mb-1 font-bold text-4xl text-black dark:text-white">
+                {isProfileLoading
+                  ? "Loading profile…"
+                  : profile?.full_name?.trim() ||
+                    user?.user_metadata?.full_name ||
+                    user?.user_metadata?.name ||
+                    user?.email?.split("@")[0] ||
+                    "Atelier Guest"}
               </Text>
               <Text className="font-normal text-sm text-gray-600 dark:text-white">
-                {user?.email || "No email provided"}
+                {profile?.email || user?.email || "Sign in to view your account details"}
               </Text>
+              {profile?.phone ? (
+                <Text className="mt-1 font-normal text-sm text-gray-600 dark:text-white">
+                  {profile.phone}
+                </Text>
+              ) : null}
             </View>
           </View>
         </View>
@@ -425,18 +441,34 @@ const Profile = () => {
         ) : null}
 
         <View className="mb-16 px-6">
-          <Pressable accessibilityRole="button"
-            className="flex-row items-center gap-2"
-            onPress={async () => {
-              await signOut();
-              router.replace("/(auth)/login");
-            }}
-          >
-            <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-            <Text className="font-semibold text-base tracking-wide text-red-500">
-              Logout
-            </Text>
-          </Pressable>
+          {isAuthenticated ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Log out"
+              className="min-h-11 flex-row items-center gap-2"
+              onPress={async () => {
+                await signOut();
+                router.replace("/(auth)/login");
+              }}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+              <Text className="font-semibold text-base tracking-wide text-red-500">
+                Logout
+              </Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              className="min-h-11 flex-row items-center gap-2"
+              onPress={() => router.push("/(auth)/login" as any)}
+            >
+              <Ionicons name="log-in-outline" size={20} color={isDark ? "#ffffff" : "#000000"} />
+              <Text className="font-semibold text-base tracking-wide text-black dark:text-white">
+                Sign In
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         <View className="items-center px-6 pb-12">
