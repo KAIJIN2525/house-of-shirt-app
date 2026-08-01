@@ -75,6 +75,8 @@ const Profile = () => {
     router.push("/orders" as any);
   };
 
+  const accountEmail = profile?.email || user?.email || "";
+
   const activeOrdersCount = useMemo(
     () =>
       orders.filter(
@@ -99,7 +101,8 @@ const Profile = () => {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="flex-row items-center justify-between px-6 pb-6 pt-4">
-          <Ionicons name="menu" size={24} color={isDark ? "#f8fafc" : "#000"} />
+          {/* Balances the search icon so the logo stays centred. */}
+          <View className="w-6" />
           <BrandLogo width={154} height={28} />
           <Pressable accessibilityRole="button" accessibilityLabel="Search products" onPress={() => router.push("/search" as any)}>
             <Ionicons
@@ -137,8 +140,14 @@ const Profile = () => {
                     user?.email?.split("@")[0] ||
                     "Atelier Guest"}
               </Text>
-              <Text className="font-normal text-sm text-gray-600 dark:text-white">
-                {profile?.email || user?.email || "Sign in to view your account details"}
+              {/* An address is an identifier, not prose: it has to read back
+                  exactly as it was registered, whatever the text-case setting.
+                  The signed-out prompt is prose, so it still follows it. */}
+              <Text
+                preserveCase={Boolean(accountEmail)}
+                className="font-normal text-sm text-gray-600 dark:text-white"
+              >
+                {accountEmail || "Sign in to view your account details"}
               </Text>
               {profile?.phone ? (
                 <Text className="mt-1 font-normal text-sm text-gray-600 dark:text-white">

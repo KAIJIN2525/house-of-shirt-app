@@ -228,7 +228,7 @@ export default function AdminCustomerProfileScreen() {
 
               <View className="mt-4 flex-row items-start justify-between gap-4">
                 <View className="flex-1">
-                  <Text className="font-normal text-[14px] leading-6 text-[#44618e]">
+                  <Text preserveCase className="font-normal text-[14px] leading-6 text-[#44618e]">
                     {customer.email}
                   </Text>
                   <Text className="mt-1 font-normal text-[12px] text-neutral-400">

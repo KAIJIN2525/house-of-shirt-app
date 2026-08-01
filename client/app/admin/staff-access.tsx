@@ -44,7 +44,7 @@ const StaffRow = memo(function StaffRow({
           />
         </View>
         <View className="flex-1">
-          <Text className="font-bold text-[13px] text-black dark:text-white">
+          <Text preserveCase className="font-bold text-[13px] text-black dark:text-white">
             {grant.email}
           </Text>
           <Text className="mt-1 font-bold text-[9px] tracking-[1.3px] text-neutral-400">

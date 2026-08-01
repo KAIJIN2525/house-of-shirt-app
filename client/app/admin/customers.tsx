@@ -221,7 +221,7 @@ export default function AdminCustomersScreen() {
                         <Text className="font-bold text-[16px] text-black dark:text-white">
                           {customer.name}
                         </Text>
-                        <Text className="mt-1 font-normal text-[12px] text-neutral-400">
+                        <Text preserveCase className="mt-1 font-normal text-[12px] text-neutral-400">
                           {customer.email}
                         </Text>
                         <Text className="mt-1 font-normal text-[11px] tracking-[1.2px] text-neutral-300">

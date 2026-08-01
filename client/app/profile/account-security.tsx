@@ -119,7 +119,7 @@ export default function AccountSecurityScreen() {
       <ScrollView contentContainerClassName="gap-8 px-6 pb-20 pt-8" keyboardShouldPersistTaps="handled">
         <View className="bg-gray-50 p-5 dark:bg-[#101215]">
           <Text className="font-bold text-xs tracking-[1.5px] text-gray-500 dark:text-white/60">EMAIL VERIFICATION</Text>
-          <Text className="mt-3 font-semibold text-lg text-black dark:text-white">{user?.email ?? "No email address"}</Text>
+          <Text preserveCase={Boolean(user?.email)} className="mt-3 font-semibold text-lg text-black dark:text-white">{user?.email ?? "No email address"}</Text>
           <View className="mt-3 flex-row items-center gap-2">
             <Ionicons name={emailVerified ? "checkmark-circle" : "alert-circle"} size={18} color={emailVerified ? "#16a34a" : "#d97706"} />
             <Text className="text-sm text-gray-600 dark:text-white/70">{emailVerified ? "Verified" : "Verification required"}</Text>
