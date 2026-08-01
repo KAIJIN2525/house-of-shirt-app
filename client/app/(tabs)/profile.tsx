@@ -94,7 +94,10 @@ const Profile = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-[#050505]">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
         <View className="flex-row items-center justify-between px-6 pb-6 pt-4">
           <Ionicons name="menu" size={24} color={isDark ? "#f8fafc" : "#000"} />
           <BrandLogo width={154} height={28} />
@@ -107,8 +110,8 @@ const Profile = () => {
           </Pressable>
         </View>
 
-        <View className="mb-8 px-6">
-          <View className="gap-4 pt-6">
+        <View className="mb-10 px-6 pt-6">
+          <View className="flex-row items-center gap-5">
             <View className="h-24 w-24 items-center justify-center overflow-hidden bg-gray-700 dark:bg-[#17191d]">
               {profile?.avatar_url ? (
                 <Image source={{ uri: profile.avatar_url }} className="h-full w-full" resizeMode="cover" accessibilityLabel="Profile photo" />
@@ -117,16 +120,17 @@ const Profile = () => {
               )}
             </View>
 
-            <View className="min-h-28 flex-1 justify-center">
+            <View className="flex-1 justify-center py-2">
               <Text className="font-medium text-xs text-slate-600 dark:text-white uppercase">
                 {isAuthenticated ? "MEMBER SINCE " : "WELCOME"}
                 {isAuthenticated
                   ? new Date(profile?.created_at ?? user?.created_at ?? Date.now()).getFullYear()
                   : null}
               </Text>
-              <Text className="mb-1 font-bold text-4xl text-black dark:text-white">
+              <Text className="mb-1 font-bold text-3xl leading-9 text-black dark:text-white"
+                numberOfLines={2}>
                 {isProfileLoading
-                  ? "Loading profile…"
+                  ? "Loading profile..."
                   : profile?.full_name?.trim() ||
                     user?.user_metadata?.full_name ||
                     user?.user_metadata?.name ||
