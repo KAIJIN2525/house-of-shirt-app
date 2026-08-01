@@ -12,6 +12,18 @@ export function CustomTabBar({
 }: BottomTabBarProps) {
   const {  isDark  } = useThemeStore();
 
+  // Expo Router registers every file in app/(tabs) as a route, and the default
+  // tab bar hides any route marked `href: null`. This custom bar replaces that
+  // default, so without the same filtering a route with no icon still claims a
+  // flex slot and leaves a blank gap at the end of the pill.
+  const visibleRoutes = state.routes.filter((route) => {
+    const { options } = descriptors[route.key];
+    return (
+      options.tabBarIcon != null &&
+      (options as { href?: string | null }).href !== null
+    );
+  });
+
   return (
     <View style={styles.container}>
       {/* White tab bar background */}
@@ -21,9 +33,12 @@ export function CustomTabBar({
           isDark ? styles.tabBarDark : styles.tabBarLight,
         ]}
       >
-        {state.routes.map((route, index) => {
+        {visibleRoutes.map((route) => {
           const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
+          // Focus compares against the navigator's own index, so it must use
+          // the route's position in state.routes, not in the filtered list.
+          const isFocused =
+            state.routes[state.index]?.key === route.key;
 
           const onPress = () => {
             const event = navigation.emit({
