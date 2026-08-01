@@ -49,3 +49,6 @@ app-example
 .env
 .env.*
 !.env.example
+
+# tests
+coverage/

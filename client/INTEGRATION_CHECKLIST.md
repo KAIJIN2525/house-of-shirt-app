@@ -11,7 +11,7 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Dark/light themes, custom fonts, loaders, skeletons, toast feedback, and haptics.
 - [x] Customer tabs: Home, Shop, Bag, Favorites, Profile.
 - [x] Full in-app administration route group.
-- [ ] Add unit, integration, and end-to-end tests plus CI checks.
+- [ ] Expand the initial automated unit-test and CI foundation into integration and end-to-end coverage.
 - [x] Added an accessibility foundation for shared customer/admin tabs, authentication forms, loading announcements, and OS reduced-motion preferences.
 - [x] Completed the customer shopping-flow accessibility pass for Home, Shop, product cards/details, Bag, shipping selection, and Checkout controls.
 - [x] Completed the post-purchase accessibility pass for customer orders/details, returns/exchanges, support, and notifications.
