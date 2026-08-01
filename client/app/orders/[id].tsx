@@ -1,4 +1,5 @@
 import { formatPrice } from "@/constants";
+import { SUPPORT_PHONE_URL } from "@/constants/contact";
 import { useOrdersStore } from "@/stores/ordersStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -135,7 +136,7 @@ export default function OrderDetailsScreen() {
               </Text>
               <View className="flex-row gap-2">
                 <Pressable
-                  onPress={() => Linking.openURL("tel:+2349069120288").catch(() => {})}
+                  onPress={() => Linking.openURL(SUPPORT_PHONE_URL).catch(() => {})}
                   className="flex-1 border border-black/10 px-3 py-3 dark:border-white/10"
                 >
                   <Text className="text-center font-bold text-[10px] uppercase tracking-[1.1px] text-black dark:text-white">

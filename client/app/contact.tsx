@@ -3,8 +3,14 @@ import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useThemeStore } from "@/stores/themeStore";
-import { Image, Pressable, ScrollView, TextInput, View } from "react-native";
+import { Image, Linking, Pressable, ScrollView, TextInput, View } from "react-native";
 import { AppText as Text } from "@/components/AppText";
+import {
+  SUPPORT_EMAIL,
+  SUPPORT_PHONE_URL,
+  SUPPORT_WHATSAPP_DISPLAY,
+  SUPPORT_WHATSAPP_URL,
+} from "@/constants/contact";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../global.css";
 
@@ -22,6 +28,19 @@ export default function ContactScreen() {
   const [email, setEmail] = useState("ALEXANDER@HOUSEOFSHIRTS.COM");
   const [subject, setSubject] = useState(SUBJECT_OPTIONS[0]);
   const [message, setMessage] = useState("");
+
+  const openEmail = () => {
+    Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`).catch(
+      () => {},
+    );
+  };
+
+  // Falls back to a normal call if WhatsApp is not installed to handle the link.
+  const openWhatsApp = () => {
+    Linking.openURL(SUPPORT_WHATSAPP_URL).catch(() => {
+      Linking.openURL(SUPPORT_PHONE_URL).catch(() => {});
+    });
+  };
 
   const openChat = () => {
     let topicId = "general";
@@ -88,28 +107,35 @@ export default function ContactScreen() {
 
         <View className="mt-3 flex-row gap-3 px-6">
           <Pressable
-            onPress={openChat}
+            onPress={openEmail}
+            accessibilityRole="button"
+            accessibilityLabel={`Email the concierge at ${SUPPORT_EMAIL}`}
             className="flex-1 bg-[#eef2f7] px-4 py-4 dark:bg-[#101215]"
           >
             <Ionicons name="mail" size={16} color={isDark ? "#ffffff" : "#111111"} />
             <Text className="mt-4 font-bold text-[16px] text-black dark:text-white">
               Email
             </Text>
-            <Text className="mt-2 font-normal text-[12px] leading-5 text-neutral-500">
-              concierge@houseofshirts.com
+            <Text
+              preserveCase
+              className="mt-2 font-normal text-[12px] leading-5 text-neutral-500"
+            >
+              {SUPPORT_EMAIL}
             </Text>
           </Pressable>
 
           <Pressable
-            onPress={openChat}
+            onPress={openWhatsApp}
+            accessibilityRole="button"
+            accessibilityLabel={`Message the concierge on WhatsApp at ${SUPPORT_WHATSAPP_DISPLAY}`}
             className="flex-1 bg-[#eef2f7] px-4 py-4 dark:bg-[#101215]"
           >
-            <Ionicons name="call" size={16} color={isDark ? "#ffffff" : "#111111"} />
+            <Ionicons name="logo-whatsapp" size={16} color={isDark ? "#ffffff" : "#111111"} />
             <Text className="mt-4 font-bold text-[16px] text-black dark:text-white">
-              Phone
+              WhatsApp
             </Text>
             <Text className="mt-2 font-normal text-[12px] leading-5 text-neutral-500">
-              +1 800 116-789
+              {SUPPORT_WHATSAPP_DISPLAY}
             </Text>
           </Pressable>
         </View>

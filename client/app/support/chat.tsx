@@ -16,8 +16,7 @@ import {
 import { AppText as Text } from "@/components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
-
-const WHATSAPP_NUMBER = "2349069120288";
+import { SUPPORT_WHATSAPP_E164 as WHATSAPP_NUMBER } from "@/constants/contact";
 
 type TopicId =
   | "order"
