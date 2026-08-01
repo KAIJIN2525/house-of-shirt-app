@@ -1,5 +1,10 @@
 import { formatPrice } from "@/constants";
 import { Product } from "@/constants/products";
+import {
+  ALL_ITEMS_KEY,
+  buildCategoryFilters,
+  categoryKey,
+} from "@/lib/catalogue";
 import { useAdminContentStore } from "@/stores/adminContentStore";
 import { useProductsStore } from "@/stores/productsStore";
 import { useThemeStore } from "@/stores/themeStore";
@@ -13,39 +18,6 @@ import { AppText as Text } from "@/components/AppText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 
-const CATEGORIES = [
-  {
-    id: "1",
-    name: "All Items",
-    icon: "view-grid",
-    type: "MaterialCommunityIcons",
-  },
-  {
-    id: "2",
-    name: "T-Shirts",
-    icon: "tshirt-crew",
-    type: "MaterialCommunityIcons",
-  },
-  { id: "3", name: "Hoodies", icon: "hanger", type: "MaterialCommunityIcons" },
-  {
-    id: "4",
-    name: "Long Sleeve",
-    icon: "tshirt-v",
-    type: "MaterialCommunityIcons",
-  },
-  {
-    id: "5",
-    name: "Sweatshirts",
-    icon: "hanger",
-    type: "MaterialCommunityIcons",
-  },
-  {
-    id: "6",
-    name: "Accessories",
-    icon: "glasses",
-    type: "MaterialCommunityIcons",
-  },
-];
 
 const ProductItem = React.memo(({ item, viewMode, onPress }: { item: Product, viewMode: 'grid' | 'list', onPress: () => void }) => {
 
@@ -135,31 +107,24 @@ const Shop = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const [selectedCategory, setSelectedCategory] = useState("1");
+  const [selectedCategory, setSelectedCategory] = useState(ALL_ITEMS_KEY);
   const [selectedBrand, setSelectedBrand] = useState("All Brands");
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Handle category filter from params
+  // A link into the shop pre-selects a filter; the chips own it from then on.
+  // These deliberately do not reset the selection when the param goes away,
+  // because picking a chip clears the param -- resetting here would undo the
+  // customer's own choice a render after they made it.
   useEffect(() => {
     if (params.category) {
-      const category = CATEGORIES.find(
-        (c) =>
-          c.name.toLowerCase() === (params.category as string).toLowerCase(),
-      );
-      if (category) {
-        setSelectedCategory(category.id);
-      }
-    } else {
-      setSelectedCategory("1"); // Reset to 'All Items'
+      setSelectedCategory(categoryKey(params.category as string));
     }
   }, [params.category]);
 
   useEffect(() => {
     if (params.brand) {
       setSelectedBrand(params.brand as string);
-    } else {
-      setSelectedBrand("All Brands"); // Reset to 'All Brands'
     }
   }, [params.brand]);
 
@@ -172,17 +137,23 @@ const Shop = () => {
     return ["All Brands", ...combined.sort()];
   }, [products, collectiveBrands]);
 
+  /**
+   * Built from the catalogue rather than a fixed list, so every chip is backed
+   * by stock. A hardcoded rail silently returns "Collection Empty" whenever the
+   * Shopify product types drift away from the labels it was written against.
+   */
+  const categories = useMemo(() => buildCategoryFilters(products), [products]);
+
 
 
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
     // Filter by category
-    if (selectedCategory !== "1") {
-      const categoryName = CATEGORIES.find(
-        (c) => c.id === selectedCategory,
-      )?.name;
-      filtered = filtered.filter((p) => p.category === categoryName);
+    if (selectedCategory !== ALL_ITEMS_KEY) {
+      filtered = filtered.filter(
+        (p) => categoryKey(p.category) === selectedCategory,
+      );
     }
 
     // Filter by brand
@@ -193,7 +164,12 @@ const Shop = () => {
     return filtered;
   }, [products, selectedCategory, selectedBrand]);
 
-  const renderHeader = useCallback(
+  // A memoised *element*, not a component. Passing FlatList a new function
+  // identity for ListHeaderComponent makes it a new element type on every
+  // render, so React tears the header down and rebuilds it -- which is what was
+  // snapping the brand and category rails back to the start whenever a chip was
+  // picked. An element reconciles in place and keeps their scroll offsets.
+  const listHeader = useMemo(
     () => (
       <>
         {errorMessage ? (
@@ -278,18 +254,18 @@ const Shop = () => {
             CATEGORY
           </Text>
           <FlatList
-            data={CATEGORIES}
+            data={categories}
             horizontal
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.key}
             contentContainerStyle={{ gap: 8 }}
             renderItem={({ item }) => (
               <Pressable
-                onPress={() => setSelectedCategory(item.id)}
+                onPress={() => setSelectedCategory(item.key)}
                 accessibilityRole="button"
-                accessibilityState={{ selected: selectedCategory === item.id }}
+                accessibilityState={{ selected: selectedCategory === item.key }}
                 className={`flex-row items-center px-6 py-3 ${
-                  selectedCategory === item.id
+                  selectedCategory === item.key
                     ? "bg-black dark:bg-white"
                     : "bg-gray-100 dark:bg-white/5"
                 }`}
@@ -298,7 +274,7 @@ const Shop = () => {
                   name={item.icon as any}
                   size={14}
                   color={
-                    selectedCategory === item.id
+                    selectedCategory === item.key
                       ? isDark
                         ? "black"
                         : "white"
@@ -308,12 +284,12 @@ const Shop = () => {
 
                 <Text
                   className={`ml-2 text-[10px] font-bold tracking-[1.5px] ${
-                    selectedCategory === item.id
+                    selectedCategory === item.key
                       ? "text-white dark:text-black"
                       : "text-gray-400"
                   }`}
                 >
-                  {item.name}
+                  {item.label}
                 </Text>
               </Pressable>
             )}
@@ -349,6 +325,7 @@ const Shop = () => {
       viewMode,
       isDark,
       brands,
+      categories,
       router,
       errorKind,
       errorMessage,
@@ -419,7 +396,7 @@ const Shop = () => {
           paddingTop: 32,
           paddingBottom: 40,
         }}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={listHeader}
         ListEmptyComponent={renderEmpty}
         refreshControl={
           <RefreshControl
