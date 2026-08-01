@@ -119,7 +119,7 @@ const Shop = () => {
 
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { products, fetchProducts } = useProductsStore();
+  const { products, fetchProducts, errorKind, errorMessage, isStale, isLoading } = useProductsStore();
   const { brands: collectiveBrands } = useAdminContentStore();
   const { isDark } = useThemeStore();
   const [refreshing, setRefreshing] = useState(false);
@@ -196,6 +196,31 @@ const Shop = () => {
   const renderHeader = useCallback(
     () => (
       <>
+        {errorMessage ? (
+          <View accessibilityRole="alert" className="mb-6 border border-amber-300 bg-amber-50 p-4 dark:border-amber-400/40 dark:bg-amber-950/30">
+            <View className="flex-row items-start gap-3">
+              <Ionicons name={errorKind === "offline" ? "cloud-offline-outline" : "time-outline"} size={20} color={isDark ? "#fbbf24" : "#92400e"} />
+              <View className="flex-1">
+                <Text className="font-bold text-sm text-amber-900 dark:text-amber-200">
+                  {isStale ? "Showing saved products" : "Catalogue unavailable"}
+                </Text>
+                <Text className="mt-1 text-sm text-amber-800 dark:text-amber-100/80">{errorMessage}</Text>
+              </View>
+              <Pressable
+                onPress={() => void fetchProducts()}
+                disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading products"
+                accessibilityState={{ disabled: isLoading, busy: isLoading }}
+                className="min-h-11 justify-center px-2"
+              >
+                <Text className="font-bold text-xs uppercase text-amber-900 dark:text-amber-200">
+                  {isLoading ? "Retrying" : "Retry"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
         <View className="mb-8">
           <Text className="font-light text-[10px] tracking-[4px] text-gray-400 mb-2 uppercase">
             THE ATELIER
@@ -325,6 +350,11 @@ const Shop = () => {
       isDark,
       brands,
       router,
+      errorKind,
+      errorMessage,
+      isStale,
+      isLoading,
+      fetchProducts,
     ],
   );
 
@@ -338,11 +368,13 @@ const Shop = () => {
           Collection Empty
         </Text>
         <Text className="font-normal text-gray-500 text-sm mt-2 text-center px-10">
-          Try adjusting your selection or check back later for new arrivals.
+          {errorMessage
+            ? "Pull down or select Retry once your connection is available."
+            : "Try adjusting your selection or check back later for new arrivals."}
         </Text>
       </View>
     ),
-    [],
+    [errorMessage],
   );
 
   return (

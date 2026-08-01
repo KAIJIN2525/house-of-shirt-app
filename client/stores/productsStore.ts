@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { classifyNetworkError, NetworkErrorKind } from "@/services/network";
 import {
   Product,
   ProductSizeOption,
@@ -11,6 +12,9 @@ interface ProductsState {
   products: Product[];
   isLoading: boolean;
   hasLoaded: boolean;
+  errorKind: NetworkErrorKind | null;
+  errorMessage: string | null;
+  isStale: boolean;
   fetchProducts: () => Promise<void>;
   getProductById: (productId?: string) => Product | undefined;
   getBestSellingProducts: (limit?: number) => Product[];
@@ -178,6 +182,9 @@ export const useProductsStore = create<ProductsState>()(
       products: [],
       isLoading: false,
       hasLoaded: false,
+      errorKind: null,
+      errorMessage: null,
+      isStale: false,
 
       fetchProducts: async () => {
         if (get().isLoading) {
@@ -197,7 +204,7 @@ export const useProductsStore = create<ProductsState>()(
           return;
         }
 
-        set({ isLoading: true });
+        set({ isLoading: true, errorKind: null, errorMessage: null });
         try {
           const { supabase } = await import("@/lib/supabase");
 
@@ -298,10 +305,25 @@ export const useProductsStore = create<ProductsState>()(
           set({
             products: mappedProducts,
             hasLoaded: true,
+            errorKind: null,
+            errorMessage: null,
+            isStale: false,
           });
         } catch (error) {
           console.error("Error fetching products:", error);
-          set({ hasLoaded: true });
+          const errorKind = classifyNetworkError(error);
+          const errorMessage =
+            errorKind === "offline"
+              ? "You are offline. Showing your last saved catalogue."
+              : errorKind === "rate_limited"
+                ? "The catalogue is receiving too many requests. Please wait a moment before retrying."
+                : "We could not refresh the catalogue. Showing saved products when available.";
+          set((state) => ({
+            hasLoaded: true,
+            errorKind,
+            errorMessage,
+            isStale: state.products.length > 0,
+          }));
         } finally {
           set({ isLoading: false });
         }
@@ -344,7 +366,13 @@ export const useProductsStore = create<ProductsState>()(
           next.unshift(normalizedIncoming);
         });
 
-        set({ products: next, hasLoaded: true });
+        set({
+          products: next,
+          hasLoaded: true,
+          errorKind: null,
+          errorMessage: null,
+          isStale: false,
+        });
         return createdCount;
       },
     }),
@@ -358,6 +386,9 @@ export const useProductsStore = create<ProductsState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.isLoading = false;
+          state.errorKind = null;
+          state.errorMessage = null;
+          state.isStale = false;
           state.products = state.products.map(normalizeProduct);
         }
       },

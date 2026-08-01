@@ -28,6 +28,9 @@ const Home = () => {
   const { banner, unreadNotificationCount, brands } = useAdminContentStore();
   const products = useProductsStore((state) => state.products);
   const fetchProducts = useProductsStore((state) => state.fetchProducts);
+  const productError = useProductsStore((state) => state.errorMessage);
+  const productsAreStale = useProductsStore((state) => state.isStale);
+  const productsLoading = useProductsStore((state) => state.isLoading);
   const { isDark } = useThemeStore();
   const [loadedBrandLogos, setLoadedBrandLogos] = useState<
     Record<string, boolean>
@@ -111,6 +114,27 @@ const Home = () => {
             ) : null}
           </Pressable>
         </View>
+
+        {productError ? (
+          <View accessibilityRole="alert" className="mx-6 mb-4 flex-row items-center border border-amber-300 bg-amber-50 p-3 dark:border-amber-400/40 dark:bg-amber-950/30">
+            <Ionicons name="cloud-offline-outline" size={18} color={isDark ? "#fbbf24" : "#92400e"} />
+            <Text className="ml-3 flex-1 text-sm text-amber-900 dark:text-amber-100">
+              {productsAreStale ? "Showing saved products. " : ""}{productError}
+            </Text>
+            <Pressable
+              onPress={() => void fetchProducts()}
+              disabled={productsLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading products"
+              accessibilityState={{ disabled: productsLoading, busy: productsLoading }}
+              className="min-h-11 justify-center px-2"
+            >
+              <Text className="font-bold text-xs text-amber-900 dark:text-amber-200">
+                {productsLoading ? "RETRYING" : "RETRY"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <Pressable onPress={handleHeroPress} accessibilityRole="button" accessibilityLabel={`${heroContent.headline}. ${heroContent.ctaText}`}>
           <View className="mb-8 h-[450px] overflow-hidden">

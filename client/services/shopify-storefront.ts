@@ -1,3 +1,4 @@
+import { fetchJsonWithRetry } from "@/services/network";
 import type { BagItem } from "@/stores/bagStore";
 
 const SHOPIFY_API_VERSION = "2026-07";
@@ -134,16 +135,22 @@ const requestStorefront = async <T>(query: string, variables: Record<string, unk
   if (storefrontAccessToken) {
     headers["X-Shopify-Storefront-Access-Token"] = storefrontAccessToken;
   }
-  const response = await fetch(`https://${storeDomain}/api/${SHOPIFY_API_VERSION}/graphql.json`, {
+  const payload = await fetchJsonWithRetry<{
+    data?: T;
+    errors?: { message?: string; extensions?: { code?: string } }[];
+  }>(`https://${storeDomain}/api/${SHOPIFY_API_VERSION}/graphql.json`, {
     method: "POST",
     headers,
     body: JSON.stringify({ query, variables }),
+  }, {
+    shouldRetryPayload: (result) =>
+      result.errors?.some((error) => error.extensions?.code === "THROTTLED") === true,
   });
-  const payload = await response.json();
-  if (!response.ok || payload.errors?.length) {
-    throw new Error(payload.errors?.map((error: { message?: string }) => error.message).join("; ") || `Shopify request failed (${response.status})`);
+  if (payload.errors?.length) {
+    throw new Error(payload.errors.map((error) => error.message).filter(Boolean).join("; ") || "Shopify request failed.");
   }
-  return payload.data as T;
+  if (!payload.data) throw new Error("Shopify returned an empty response.");
+  return payload.data;
 };
 
 const throwUserErrors = (errors?: Array<{ message: string }>) => {

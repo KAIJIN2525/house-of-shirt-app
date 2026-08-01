@@ -38,7 +38,7 @@ This reflects what exists in the repository, not a guarantee that every external
 - [x] Shopify Storefront client and synchronized Supabase product store.
 - [x] Supabase-persisted favorites and back-in-stock request/admin workflows.
 - [ ] Validate production Storefront credentials, pagination, images, pricing, options, and inventory.
-- [ ] Add robust offline, rate-limit, empty, and partial-sync states.
+- [x] Added cached-catalogue fallback plus explicit offline, rate-limited, stale/partial-data, empty, and retry states; Storefront requests use bounded retries and `Retry-After`.
 - [ ] Add privacy-safe product and search analytics.
 
 ## Bag, checkout, and payment
