@@ -1,5 +1,6 @@
 import { createClient } from "supabase";
 import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
+import { getLogisticsMilestone, getOrderStatus } from "../_shared/order-state.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -141,19 +142,8 @@ const getPaymentMethod = (order: any) => {
   return order.financial_status || "Shopify";
 };
 
-const getStatus = (order: any) => {
-  if (order.cancelled_at) return "Cancelled";
-  if (order.fulfillment_status === "fulfilled") return "Delivered";
-  if (order.fulfillment_status === "partial") return "Shipped";
-  return "Processing";
-};
-
-const getMilestone = (order: any) => {
-  if (order.cancelled_at) return "Cancelled";
-  if (order.fulfillment_status === "fulfilled") return "Delivered";
-  if (order.fulfillment_status === "partial") return "Shipped";
-  return "Processing";
-};
+const getStatus = getOrderStatus;
+const getMilestone = getLogisticsMilestone;
 
 const getShipping = (order: any) =>
   toNumber(order.total_shipping_price_set?.shop_money?.amount ?? order.shipping_lines?.[0]?.price);

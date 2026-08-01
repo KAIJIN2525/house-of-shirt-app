@@ -1,6 +1,7 @@
 import { createClient } from "supabase";
 import { consumeRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 import { fetchAllShopifyRestResources } from "../_shared/shopify-rest.mjs";
+import { getLogisticsMilestone, getOrderStatus } from "../_shared/order-state.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -543,7 +544,6 @@ const upsertOrders = async (
             existing.metadata && typeof existing.metadata === "object"
               ? existing.metadata
               : {};
-          const isDelivered = order.fulfillment_status === "fulfilled";
           const shipping = toNumber(
             order.total_shipping_price_set?.shop_money?.amount ??
               order.shipping_lines?.[0]?.price,
@@ -553,8 +553,8 @@ const upsertOrders = async (
             .from("orders")
             .update({
               shopify_order_id: shopifyOrderId,
-              status: isDelivered ? "Delivered" : "Processing",
-              logistics_milestone: isDelivered ? "Delivered" : "Processing",
+              status: getOrderStatus(order),
+              logistics_milestone: getLogisticsMilestone(order),
               updated_at: now,
               shopify_event_at: order.updated_at ?? order.created_at ?? now,
               metadata: {
@@ -620,8 +620,6 @@ const upsertOrders = async (
         order.total_shipping_price_set?.shop_money?.amount ??
           order.shipping_lines?.[0]?.price,
       );
-      const isDelivered = order.fulfillment_status === "fulfilled";
-
       return {
         id: `shopify-${order.id}`,
         shopify_order_id: String(order.id),
@@ -637,8 +635,8 @@ const upsertOrders = async (
         total: toNumber(order.total_price),
         total_amount: toNumber(order.total_price),
         order_number: orderName,
-        status: isDelivered ? "Delivered" : "Processing",
-        logistics_milestone: isDelivered ? "Delivered" : "Processing",
+        status: getOrderStatus(order),
+        logistics_milestone: getLogisticsMilestone(order),
         shipping_address: order.shipping_address || order.billing_address || {},
         payment_method: paymentMethod,
         created_at: order.created_at,

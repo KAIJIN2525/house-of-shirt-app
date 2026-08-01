@@ -1,4 +1,5 @@
 import { createClient } from "supabase";
+import { getLogisticsMilestone, getOrderStatus } from "../_shared/order-state.ts";
 
 const verifyWebhookSignature = async (
   rawBody: string,
@@ -44,21 +45,6 @@ const isStaleShopifyEvent = (
 ) => {
   if (typeof storedTimestamp !== "string" || !storedTimestamp) return false;
   return Date.parse(storedTimestamp) >= Date.parse(incomingTimestamp);
-};
-
-const getOrderStatus = (order: any) => {
-  if (order.cancelled_at) return "Cancelled";
-  if (order.fulfillment_status === "fulfilled") return "Delivered";
-  if (order.fulfillment_status === "partial") return "Shipped";
-  if (order.financial_status === "paid") return "Processing";
-  return "Processing";
-};
-
-const getLogisticsMilestone = (order: any) => {
-  if (order.cancelled_at) return "Cancelled";
-  if (order.fulfillment_status === "fulfilled") return "Delivered";
-  if (order.fulfillment_status === "partial") return "Shipped";
-  return "Processing";
 };
 
 const getCustomerName = (order: any) => {
