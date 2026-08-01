@@ -19,15 +19,15 @@ import { BrandLogo } from "@/components/BrandLogo";
 
 // Curated suggestions are now dynamic based on products
 
-
 import { useSearchStore } from "@/stores/searchStore";
 
 const Search = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const {  products, fetchProducts  } = useProductsStore();
-  const {  isDark  } = useThemeStore();
-  const { recentSearches, addSearch, removeSearch, clearAll } = useSearchStore();
+  const { products, fetchProducts } = useProductsStore();
+  const { isDark } = useThemeStore();
+  const { recentSearches, addSearch, removeSearch, clearAll } =
+    useSearchStore();
 
   const [searchTerm, setSearchTerm] = useState((params.search as string) || "");
   const [showResults, setShowResults] = useState(
@@ -41,11 +41,12 @@ const Search = () => {
   const filteredProducts = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return [];
-    
+
     const keywords = term.split(/\s+/).filter(Boolean);
-    
+
     return products.filter((p) => {
-      const searchable = `${p.name} ${p.brand} ${p.category || ""}`.toLowerCase();
+      const searchable =
+        `${p.name} ${p.brand} ${p.category || ""}`.toLowerCase();
       return keywords.every((keyword) => searchable.includes(keyword));
     });
   }, [products, searchTerm]);
@@ -75,14 +76,14 @@ const Search = () => {
   const curatedSuggestionsItems = useMemo(() => {
     // Pick top rated products that have images
     return [...products]
-      .filter(p => p.image)
+      .filter((p) => p.image)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
       .slice(0, 3)
-      .map(p => ({
+      .map((p) => ({
         id: p.id,
         name: p.name,
         subtitle: `${p.brand} | ${p.category || "Collection"}`,
-        image: typeof p.image === 'string' ? { uri: p.image } : p.image,
+        image: typeof p.image === "string" ? { uri: p.image } : p.image,
       }));
   }, [products]);
 
@@ -90,19 +91,25 @@ const Search = () => {
     router.push(`/product/${item.id}` as any);
   };
 
-
-
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-[#050505]">
       <View className="flex-1">
         {/* Header */}
         <View className="flex-row items-center justify-between px-6 pt-4 pb-4 ">
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color={isDark ? "#ffffff" : "#000"} />
+            <Ionicons
+              name="close"
+              size={24}
+              color={isDark ? "#ffffff" : "#000"}
+            />
           </Pressable>
           <BrandLogo width={154} height={28} />
           <Pressable onPress={() => router.push("/notifications" as any)}>
-            <Ionicons name="notifications-outline" size={24} color={isDark ? "#ffffff" : "#000"} />
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={isDark ? "#ffffff" : "#000"}
+            />
           </Pressable>
         </View>
 
@@ -132,10 +139,10 @@ const Search = () => {
         {!showResults && searchTerm.length > 0 && (
           <View className="px-6 py-2 bg-white dark:bg-[#050505] border-b border-gray-100 dark:border-white/10">
             {recentSearches
-              .filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()))
+              .filter((s) => s.toLowerCase().includes(searchTerm.toLowerCase()))
               .slice(0, 3)
               .map((suggestion, idx) => (
-                <Pressable 
+                <Pressable
                   key={idx}
                   onPress={() => submitSearch(suggestion)}
                   className="flex-row items-center py-3 gap-3 border-b border-gray-50 dark:border-white/5"
@@ -148,7 +155,6 @@ const Search = () => {
               ))}
           </View>
         )}
-
 
         {showResults ? (
           // Search Results
@@ -176,8 +182,8 @@ const Search = () => {
                     }}
                     className="flex-1"
                   >
-                    <View className="overflow-hidden rounded-[22px] bg-white dark:bg-transparent">
-                      <View className="w-full h-48 overflow-hidden rounded-t-[22px] bg-gray-100 dark:bg-[#101215]">
+                    <View className="overflow-hidden bg-white dark:bg-transparent">
+                      <View className="w-full h-48 overflow-hiddenbg-gray-100 dark:bg-[#101215]">
                         <Image
                           source={
                             typeof item.image === "string"
@@ -259,7 +265,6 @@ const Search = () => {
                     </Pressable>
                   ))}
                 </View>
-
               </View>
             )}
 
@@ -290,12 +295,10 @@ const Search = () => {
                       </Text>
                     </View>
                     <Ionicons name="open-outline" size={18} color="#94a3b8" />
-
                   </Pressable>
                 ))}
               </View>
             </View>
-
           </ScrollView>
         )}
       </View>
