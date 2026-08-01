@@ -24,6 +24,30 @@ interface BagState {
 }
 
 
+/**
+ * Keeps the 12-hour "your bag is waiting" reminder in step with the bag.
+ *
+ * Every change re-arms it from now, so the window tracks the last time the
+ * customer touched their bag rather than the first thing they put in it, and an
+ * emptied bag cancels it outright -- a reminder about nothing is worse than no
+ * reminder. It is a local notification, so it deliberately does not depend on
+ * the Supabase write succeeding or on the customer being signed in.
+ */
+const syncAbandonedCartReminder = async (hasItems: boolean) => {
+  try {
+    const {
+      scheduleAbandonedCartNotification,
+      cancelAbandonedCartNotification,
+    } = await import("@/lib/notifications");
+
+    await (hasItems
+      ? scheduleAbandonedCartNotification()
+      : cancelAbandonedCartNotification());
+  } catch (err) {
+    console.error("Error syncing abandoned cart reminder:", err);
+  }
+};
+
 export const useBagStore = create<BagState>((set, get) => ({
   bagItems: [],
   isLoading: false,
@@ -92,6 +116,8 @@ export const useBagStore = create<BagState>((set, get) => ({
       };
     });
 
+    await syncAbandonedCartReminder(true);
+
     try {
       const { supabase } = await import("@/lib/supabase");
       const { data: { user } } = await supabase.auth.getUser();
@@ -126,11 +152,6 @@ export const useBagStore = create<BagState>((set, get) => ({
         });
         if (error) throw error;
       }
-
-      // Abandoned Cart Notification Schedule
-      const { scheduleAbandonedCartNotification } = await import("@/lib/notifications");
-      scheduleAbandonedCartNotification();
-      
     } catch (err) {
       console.error("Error adding to bag:", err);
     }
@@ -140,6 +161,9 @@ export const useBagStore = create<BagState>((set, get) => ({
     set((state) => ({
       bagItems: state.bagItems.filter((item) => item.id !== id),
     }));
+
+    await syncAbandonedCartReminder(get().bagItems.length > 0);
+
     try {
       const { supabase } = await import("@/lib/supabase");
       await supabase.from("cart_items").delete().eq("id", id);
@@ -158,6 +182,9 @@ export const useBagStore = create<BagState>((set, get) => ({
         item.id === id ? { ...item, quantity } : item
       ),
     }));
+
+    await syncAbandonedCartReminder(get().bagItems.length > 0);
+
     try {
       const { supabase } = await import("@/lib/supabase");
       await supabase.from("cart_items").update({ quantity }).eq("id", id);
@@ -168,6 +195,9 @@ export const useBagStore = create<BagState>((set, get) => ({
 
   clearBag: async () => {
     set({ bagItems: [] });
+
+    await syncAbandonedCartReminder(false);
+
     try {
       const { supabase } = await import("@/lib/supabase");
       const { data: { user } } = await supabase.auth.getUser();
