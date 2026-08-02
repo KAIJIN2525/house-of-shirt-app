@@ -1,7 +1,10 @@
 import { formatPrice } from "@/constants";
 import { Product } from "@/constants/products";
 import {
+  ALL_BRANDS_KEY,
   ALL_ITEMS_KEY,
+  brandKey,
+  buildBrandFilters,
   buildCategoryFilters,
   categoryKey,
 } from "@/lib/catalogue";
@@ -12,41 +15,81 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Image, Pressable, RefreshControl, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, View } from "react-native";
+import { Image } from "expo-image";
 import { AppText as Text } from "@/components/AppText";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 
 
-const ProductItem = React.memo(({ item, viewMode, onPress }: { item: Product, viewMode: 'grid' | 'list', onPress: () => void }) => {
+// Hoisted so the list does not hand its children a fresh style object on every
+// render, which would defeat the memo below.
+const LIST_CONTENT_STYLE = {
+  paddingHorizontal: 24,
+  paddingTop: 32,
+  paddingBottom: 40,
+};
+const GRID_COLUMN_STYLE = { gap: 20 };
+const LIST_THUMBNAIL_STYLE = { width: 120, height: 120 };
+
+interface ProductItemProps {
+  id: string;
+  name: string;
+  brand?: string;
+  image?: string;
+  price: number;
+  viewMode: "grid" | "list";
+  /** One instance shared by every row; the row calls it with its own id. */
+  onPress: (id: string) => void;
+}
+
+/**
+ * Takes primitives rather than the product object so memo's shallow compare
+ * actually holds: re-rendering the screen (a filter chip, a refresh) no longer
+ * re-renders every visible row.
+ */
+const ProductItem = React.memo(function ProductItem({
+  id,
+  name,
+  brand,
+  image,
+  price,
+  viewMode,
+  onPress,
+}: ProductItemProps) {
+  const handlePress = useCallback(() => onPress(id), [onPress, id]);
+
+  const accessibilityLabel = `${brand ?? "House of Shirts"}, ${name}, ${formatPrice(price)}`;
 
   if (viewMode === "list") {
     return (
       <Pressable
-        onPress={onPress}
+        onPress={handlePress}
         accessibilityRole="button"
-        accessibilityLabel={`${item.brand ?? "House of Shirts"}, ${item.name}, ${formatPrice(item.price)}`}
+        accessibilityLabel={accessibilityLabel}
         accessibilityHint="Opens product details"
         className="flex-row bg-white dark:bg-[#101215] rounded-xl overflow-hidden mb-3 border border-gray-200 dark:border-white/10"
       >
         <Image
-          source={{ uri: item.image }}
-          style={{ width: 120, height: 120 }}
-          resizeMode="cover"
+          source={image}
+          style={LIST_THUMBNAIL_STYLE}
+          contentFit="cover"
+          recyclingKey={id}
+          transition={120}
         />
         <View className="flex-1 p-4">
           <Text className="text-[11px] text-gray-400 uppercase font-bold tracking-[1.5px]">
-            {item.brand?.toUpperCase()}
+            {brand?.toUpperCase()}
           </Text>
           <Text
             className="font-bold text-base mt-1 text-black dark:text-white"
             numberOfLines={2}
           >
-            {item.name}
+            {name}
           </Text>
           <Text className="mt-2 font-bold text-lg text-slate-900 dark:text-white">
-            {formatPrice(item.price)}
+            {formatPrice(price)}
           </Text>
         </View>
       </Pressable>
@@ -55,37 +98,38 @@ const ProductItem = React.memo(({ item, viewMode, onPress }: { item: Product, vi
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       accessibilityRole="button"
-      accessibilityLabel={`${item.brand ?? "House of Shirts"}, ${item.name}, ${formatPrice(item.price)}`}
+      accessibilityLabel={accessibilityLabel}
       accessibilityHint="Opens product details"
       className="flex-1 overflow-hidden mb-6"
     >
       <View className="bg-gray-100 dark:bg-white/5 aspect-[3/4] overflow-hidden">
         <Image
-          source={{ uri: item.image }}
+          source={image}
           className="w-full h-full"
-          resizeMode="cover"
+          contentFit="cover"
+          recyclingKey={id}
+          transition={120}
         />
       </View>
       <View className="mt-3">
         <Text className="text-[11px] text-gray-400 uppercase font-bold tracking-[1.5px]">
-          {item.brand?.toUpperCase()}
+          {brand?.toUpperCase()}
         </Text>
         <Text
           className="font-bold text-sm mt-1 text-black dark:text-white"
           numberOfLines={1}
         >
-          {item.name}
+          {name}
         </Text>
         <Text className="mt-1 font-bold text-sm text-slate-900 dark:text-white">
-          {formatPrice(item.price)}
+          {formatPrice(price)}
         </Text>
       </View>
     </Pressable>
   );
 });
-ProductItem.displayName = "ProductItem";
 
 const Shop = () => {
 
@@ -108,7 +152,7 @@ const Shop = () => {
   }, [fetchProducts]);
 
   const [selectedCategory, setSelectedCategory] = useState(ALL_ITEMS_KEY);
-  const [selectedBrand, setSelectedBrand] = useState("All Brands");
+  const [selectedBrand, setSelectedBrand] = useState(ALL_BRANDS_KEY);
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -124,18 +168,23 @@ const Shop = () => {
 
   useEffect(() => {
     if (params.brand) {
-      setSelectedBrand(params.brand as string);
+      setSelectedBrand(brandKey(params.brand as string));
     }
   }, [params.brand]);
 
-  const brands = useMemo(() => {
-    const productBrands = products.map((p) => p.brand);
-    const collectiveNames = collectiveBrands.map((b) => b.name);
-    const combined = Array.from(
-      new Set([...collectiveNames, ...productBrands]),
-    );
-    return ["All Brands", ...combined.sort()];
-  }, [products, collectiveBrands]);
+  /**
+   * Keyed off the catalogue for the same reason as the categories below: the
+   * curated collective writes "US POLO" where the vendor field says
+   * "US Polo Assn", and an exact comparison between the two found no stock.
+   */
+  const brands = useMemo(
+    () =>
+      buildBrandFilters(
+        products,
+        collectiveBrands.map((b) => b.name),
+      ),
+    [products, collectiveBrands],
+  );
 
   /**
    * Built from the catalogue rather than a fixed list, so every chip is backed
@@ -143,6 +192,41 @@ const Shop = () => {
    * Shopify product types drift away from the labels it was written against.
    */
   const categories = useMemo(() => buildCategoryFilters(products), [products]);
+
+  // One callback instance for the whole list; each row calls it with its own id
+  // rather than closing over one per render.
+  const openProduct = useCallback(
+    (id: string) => router.push(`/product/${id}` as any),
+    [router],
+  );
+
+  const renderProduct = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductItem
+        id={item.id}
+        name={item.name}
+        brand={item.brand}
+        image={item.image}
+        price={item.price}
+        viewMode={viewMode}
+        onPress={openProduct}
+      />
+    ),
+    [openProduct, viewMode],
+  );
+
+  const keyExtractor = useCallback((item: Product) => item.id, []);
+
+  const refreshControl = useMemo(
+    () => (
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        tintColor={isDark ? "#ffffff" : "#000000"}
+      />
+    ),
+    [isDark, onRefresh, refreshing],
+  );
 
 
 
@@ -157,8 +241,8 @@ const Shop = () => {
     }
 
     // Filter by brand
-    if (selectedBrand && selectedBrand !== "All Brands") {
-      filtered = filtered.filter((p) => p.brand?.trim().toLowerCase() === selectedBrand.trim().toLowerCase());
+    if (selectedBrand && selectedBrand !== ALL_BRANDS_KEY) {
+      filtered = filtered.filter((p) => brandKey(p.brand) === selectedBrand);
     }
 
     return filtered;
@@ -217,31 +301,31 @@ const Shop = () => {
             data={brands}
             horizontal
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item}
+            keyExtractor={(item) => item.key}
             contentContainerStyle={{ gap: 8 }}
             renderItem={({ item }) => (
               <Pressable
                 accessibilityRole="button"
-                accessibilityState={{ selected: selectedBrand.trim().toLowerCase() === item.trim().toLowerCase() }}
+                accessibilityState={{ selected: selectedBrand === item.key }}
                 onPress={() => {
-                  setSelectedBrand(item);
-                  // Optionally clean up router search params if they exist
+                  setSelectedBrand(item.key);
+                  // Clears the deep-link param so it cannot re-apply later.
                   router.setParams({ brand: "" });
                 }}
                 className={`px-6 py-3 border ${
-                  selectedBrand.trim().toLowerCase() === item.trim().toLowerCase()
+                  selectedBrand === item.key
                     ? "bg-black border-black dark:bg-white dark:border-white"
                     : "bg-transparent border-gray-200 dark:border-white/10"
                 }`}
               >
                 <Text
                   className={`text-[10px] font-bold tracking-[2px] ${
-                    selectedBrand.trim().toLowerCase() === item.trim().toLowerCase()
+                    selectedBrand === item.key
                       ? "text-white dark:text-black"
                       : "text-gray-400"
                   }`}
                 >
-                  {item}
+                  {item.label}
                 </Text>
               </Pressable>
             )}
@@ -391,30 +475,13 @@ const Shop = () => {
         maxToRenderPerBatch={10}
         windowSize={5}
         removeClippedSubviews={false}
-        contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingTop: 32,
-          paddingBottom: 40,
-        }}
+        contentContainerStyle={LIST_CONTENT_STYLE}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={renderEmpty}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={isDark ? "#ffffff" : "#000000"}
-          />
-        }
-
-        columnWrapperStyle={viewMode === "grid" ? { gap: 20 } : undefined}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ProductItem
-            item={item}
-            viewMode={viewMode}
-            onPress={() => router.push(`/product/${item.id}` as any)}
-          />
-        )}
+        refreshControl={refreshControl}
+        columnWrapperStyle={viewMode === "grid" ? GRID_COLUMN_STYLE : undefined}
+        keyExtractor={keyExtractor}
+        renderItem={renderProduct}
       />
 
     </SafeAreaView>

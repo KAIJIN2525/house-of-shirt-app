@@ -2,7 +2,15 @@ import { formatPrice } from "@/constants";
 import { AppText as Text } from "@/components/AppText";
 import { BrandLogo } from "@/components/BrandLogo";
 import { BrandTileSkeleton } from "@/components/loading/Skeleton";
+import {
+  getPersonalizedProducts,
+  getTrendingProducts,
+} from "@/lib/recommendations";
 import { useAdminContentStore } from "@/stores/adminContentStore";
+import { useAuthStore } from "@/stores/authStore";
+// The base store, not the wrapper: it takes a selector, so the home screen
+// subscribes to the orders it needs rather than re-rendering on every change.
+import { useOrdersStoreBase } from "@/stores/ordersStore";
 import { useProductsStore } from "@/stores/productsStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,12 +44,40 @@ const Home = () => {
     Record<string, boolean>
   >({});
 
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const myOrders = useOrdersStoreBase((state) => state.myOrders);
+  const fetchMyOrders = useOrdersStoreBase((state) => state.fetchMyOrders);
+
   useEffect(() => {
     void fetchProducts();
   }, [fetchProducts]);
 
-  const trendingProducts = products.slice(0, 5);
-  const personalizedProducts = products.slice(0, 4);
+  // Past orders are what "Personalized for You" is built from.
+  useEffect(() => {
+    if (isAuthenticated) {
+      void fetchMyOrders();
+    }
+  }, [isAuthenticated, fetchMyOrders]);
+
+  // Trending is real sales: `salesCount` is tallied from Shopify orders during
+  // the sync and rides along with every product fetch, so this rail follows
+  // what is actually selling without a feed of its own to keep in step.
+  const trendingProducts = useMemo(
+    () => getTrendingProducts(products, 10),
+    [products],
+  );
+
+  const purchasedItems = useMemo(
+    () => myOrders.flatMap((order) => order.lineItems ?? []),
+    [myOrders],
+  );
+
+  // Drawn from the brands and categories this customer has bought before,
+  // minus what they already own. Falls back to best sellers for a new account.
+  const personalizedProducts = useMemo(
+    () => getPersonalizedProducts(products, purchasedItems, 4),
+    [products, purchasedItems],
+  );
   const heroContent = useMemo(
     () => ({
       overlayLabel: banner.isActive ? banner.overlayLabel : "Limited Edition",
@@ -67,8 +103,11 @@ const Home = () => {
 
   const handleHeroPress = () => {
     if (heroContent.targetUrl?.toLowerCase().includes("white")) {
+      // Free text belongs to the search screen -- the shop filters on brand and
+      // category only, so pushing `search` at it did nothing but open the shop
+      // unfiltered.
       router.push({
-        pathname: "/(tabs)/shop",
+        pathname: "/search",
         params: { search: "white shirt" },
       } as any);
       return;
@@ -272,9 +311,14 @@ const Home = () => {
                 onPress={() =>
                   router.push({
                     pathname: "/(tabs)/shop",
-                    params: { search: item.name },
+                    // `brand` is the param the shop screen filters on. `search`
+                    // belongs to the search screen and was silently ignored
+                    // here, so the tile opened an unfiltered shop.
+                    params: { brand: item.name },
                   } as any)
                 }
+                accessibilityRole="button"
+                accessibilityLabel={`Shop ${item.name}`}
                 className="items-center"
               >
                 <View className="h-28 w-40 items-center justify-center relative overflow-hidden">
