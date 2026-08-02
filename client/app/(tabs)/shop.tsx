@@ -34,6 +34,10 @@ const LIST_CONTENT_STYLE = {
 // product keeps its column instead of stretching across the space where its
 // neighbour would have been.
 const GRID_COLUMN_STYLE = { justifyContent: "space-between" as const };
+// A real style rather than a `w-[48%]` class: the width is layout, and a plain
+// style cannot depend on Tailwind having generated that class. Without a width
+// the cell sizes to its image, which fills the screen.
+const GRID_ITEM_STYLE = { width: "48%" as const };
 const LIST_THUMBNAIL_STYLE = { width: 120, height: 120 };
 // expo-image is not registered with NativeWind, so className would not reach it
 // as a style and the image would lay out at zero height.
@@ -108,7 +112,8 @@ const ProductItem = React.memo(function ProductItem({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint="Opens product details"
-      className="w-[48%] overflow-hidden mb-6"
+      style={GRID_ITEM_STYLE}
+      className="overflow-hidden mb-6"
     >
       <View className="bg-gray-100 dark:bg-white/5 aspect-[3/4] overflow-hidden">
         <Image
