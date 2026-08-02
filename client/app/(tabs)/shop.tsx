@@ -30,8 +30,14 @@ const LIST_CONTENT_STYLE = {
   paddingTop: 32,
   paddingBottom: 40,
 };
-const GRID_COLUMN_STYLE = { gap: 20 };
+// Columns are a fixed share of the row rather than flex:1, so a last, unpaired
+// product keeps its column instead of stretching across the space where its
+// neighbour would have been.
+const GRID_COLUMN_STYLE = { justifyContent: "space-between" as const };
 const LIST_THUMBNAIL_STYLE = { width: 120, height: 120 };
+// expo-image is not registered with NativeWind, so className would not reach it
+// as a style and the image would lay out at zero height.
+const FILL_STYLE = { width: "100%" as const, height: "100%" as const };
 
 interface ProductItemProps {
   id: string;
@@ -72,7 +78,7 @@ const ProductItem = React.memo(function ProductItem({
         className="flex-row bg-white dark:bg-[#101215] rounded-xl overflow-hidden mb-3 border border-gray-200 dark:border-white/10"
       >
         <Image
-          source={image}
+          source={image ? { uri: image } : undefined}
           style={LIST_THUMBNAIL_STYLE}
           contentFit="cover"
           recyclingKey={id}
@@ -102,12 +108,12 @@ const ProductItem = React.memo(function ProductItem({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint="Opens product details"
-      className="flex-1 overflow-hidden mb-6"
+      className="w-[48%] overflow-hidden mb-6"
     >
       <View className="bg-gray-100 dark:bg-white/5 aspect-[3/4] overflow-hidden">
         <Image
-          source={image}
-          className="w-full h-full"
+          source={image ? { uri: image } : undefined}
+          style={FILL_STYLE}
           contentFit="cover"
           recyclingKey={id}
           transition={120}

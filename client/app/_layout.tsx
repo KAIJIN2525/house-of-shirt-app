@@ -8,6 +8,8 @@ import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import "../global.css";
+// Side-effect import: teaches NativeWind how to style expo-image.
+import "@/lib/nativewind-interop";
 
 import { useNotificationStore, registerForPushNotificationsAsync } from "@/stores/notificationStore";
 import * as Notifications from "expo-notifications";
@@ -20,7 +22,6 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useBagStore } from "@/stores/bagStore";
 import { useFavoritesStore } from "@/stores/favoritesStore";
-import { useAddressStore } from "@/stores/addressStore";
 import { useAdminContentStore } from "@/stores/adminContentStore";
 import { useProductsStore } from "@/stores/productsStore";
 
@@ -96,7 +97,6 @@ function GlobalStoreInitializer() {
   const { initialize, isAuthenticated, user } = useAuthStore();
   const fetchBag = useBagStore((state) => state.fetchBag);
   const fetchFavorites = useFavoritesStore((state) => state.fetchFavorites);
-  const fetchAddresses = useAddressStore((state) => state.fetchAddresses);
   const { fetchManagedContent } = useAdminContentStore();
   const fetchProducts = useProductsStore((state) => state.fetchProducts);
 
@@ -140,12 +140,11 @@ function GlobalStoreInitializer() {
       const task = InteractionManager.runAfterInteractions(() => {
         void fetchBag().catch(() => {});
         void fetchFavorites().catch(() => {});
-        void fetchAddresses().catch(() => {});
       });
 
       return () => task.cancel();
     }
-  }, [isAuthenticated, fetchBag, fetchFavorites, fetchAddresses]);
+  }, [isAuthenticated, fetchBag, fetchFavorites]);
 
   // Synchronize Expo Push Token to user's profile in Supabase
   useEffect(() => {
@@ -319,10 +318,6 @@ function RootLayoutContent() {
                                 options={{ headerShown: false }}
                               />
                               <Stack.Screen
-                                name="checkout/payment"
-                                options={{ headerShown: false }}
-                              />
-                              <Stack.Screen
                                 name="checkout/success"
                                 options={{ headerShown: false }}
                               />
@@ -348,10 +343,6 @@ function RootLayoutContent() {
                               />
                               <Stack.Screen
                                 name="product/[id]"
-                                options={{ headerShown: false }}
-                              />
-                              <Stack.Screen
-                                name="profile/shipping-addresses"
                                 options={{ headerShown: false }}
                               />
                               <Stack.Screen
