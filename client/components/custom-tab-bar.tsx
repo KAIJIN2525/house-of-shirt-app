@@ -109,10 +109,13 @@ function TabButton({ route, isFocused, onPress, options, isDark }: any) {
 }
 
 const styles = StyleSheet.create({
+  // Geometry follows the admin bar, which lays out the way this one should:
+  // equal insets, a taller pill, and slim horizontal padding so the icons have
+  // real room between them rather than being squeezed into the middle.
   container: {
     position: "absolute",
     bottom: 20,
-    left: 25,
+    left: 20,
     right: 20,
   },
   tabBar: {
@@ -124,14 +127,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderRadius: 30,
-    height: 65,
-    paddingHorizontal: 30,
-    // marginInline: 10,
-    elevation: Platform.OS === "android" ? 0 : 8,
+    height: 70,
+    paddingHorizontal: 10,
+    elevation: Platform.OS === "android" ? 0 : 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
   },
   tabBarLight: {
     backgroundColor: "white",

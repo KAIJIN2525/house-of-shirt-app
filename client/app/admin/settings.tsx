@@ -106,7 +106,9 @@ export default function AdminSettingsScreen() {
     <SafeAreaView className="flex-1 bg-[#f4f5f7] dark:bg-[#050505]">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 48 }}
+        // Clears the floating tab bar, which would otherwise sit over the save
+        // button. 120 is what the other admin screens under the bar use.
+        contentContainerStyle={{ paddingBottom: 120 }}
       >
         <View className="flex-row items-center gap-4 px-6 pb-5 pt-4">
           <Pressable
@@ -176,7 +178,8 @@ export default function AdminSettingsScreen() {
               title="Shopify synchronization"
               description="Review sync health, logs, webhooks, and manual refreshes."
               onPress={() => router.push("/admin/shopify-sync" as any)}
-            />            <SettingsLink
+            />
+            <SettingsLink
               icon="shield-checkmark-outline"
               title="Audit history"
               description="Review immutable staff changes to orders, customers, content, access, and campaigns."
